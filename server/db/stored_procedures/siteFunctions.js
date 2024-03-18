@@ -1,54 +1,143 @@
 const sql = require('mssql');
 const { executeSp } = require('../db');
 
+/**
+ * Creates a new site.
+ * @param {number} idClient - The ID of the client associated with the site.
+ * @param {string} name - The name of the site.
+ * @param {number} supervisor - The ID of the supervisor for the site.
+ * @returns {Promise<string>} A promise that resolves to 'Site created successfully.' if successful, or rejects with an error message if unsuccessful.
+ */
 async function createSite(idClient, name, supervisor) {
-  return await executeSp('sp_CreateSite', [
-    { name: 'idClient', value: idClient, type: sql.Int },
-    { name: 'name', value: name, type: sql.VarChar(50) },
-    { name: 'supervisor', value: supervisor, type: sql.Int }
-  ]);
+  try {
+    const result = await executeSp('sp_CreateSite', [
+      { name: 'idClient', value: idClient, type: sql.Int },
+      { name: 'name', value: name, type: sql.VarChar(50) },
+      { name: 'supervisor', value: supervisor, type: sql.Int }
+    ]);
+    return 'Site created successfully.';
+  } catch (error) {
+    throw new Error(`Site creation was unsuccessfully: ${error.message}`);
+  }
 }
 
+/**
+ * Retrieves all sites.
+ * @returns {Promise<Array>} A promise that resolves to an array of site objects with the following properties:
+ *   - id (number): The ID of the site.
+ *   - idClient (number): The ID of the client associated with the site.
+ *   - ClientName (string): The name of the client associated with the site.
+ *   - SupervisorName (string): The name of the supervisor for the site.
+ *   - idSystem (number): The ID of the system associated with the site.
+ *   - systemName (string): The name of the system associated with the site.
+ *   - idSystemType (number): The ID of the system type associated with the site.
+ *   - systemTypeName (string): The name of the system type associated with the site.
+ */
 async function getSites() {
-  return await executeSp('sp_GetSites');
+  const sites = await executeSp('sp_GetSites');
+  return sites.recordset;
 }
 
+/**
+ * Retrieves a site by its ID.
+ * @param {number} id - The ID of the site.
+ * @returns {Promise<Object>} A promise that resolves to a site object with the following properties:
+ *   - id (number): The ID of the site.
+ *   - idClient (number): The ID of the client associated with the site.
+ *   - ClientName (string): The name of the client associated with the site.
+ *   - SupervisorName (string): The name of the supervisor for the site.
+ *   - idSystem (number): The ID of the system associated with the site.
+ *   - systemName (string): The name of the system associated with the site.
+ *   - idSystemType (number): The ID of the system type associated with the site.
+ *   - systemTypeName (string): The name of the system type associated with the site.
+ */
 async function getSiteById(id) {
-  return await executeSp('sp_GetSiteById', [
+  const site = await executeSp('sp_GetSiteById', [
     { name: 'id', value: id, type: sql.Int }
   ]);
+  return site.recordset[0];
 }
 
-
+/**
+ * Retrieves sites associated with a specific client.
+ * @param {number} idClient - The ID of the client.
+ * @returns {Promise<Array>} A promise that resolves to an array of site objects with the following properties:
+ *   - id (number): The ID of the site.
+ *   - idClient (number): The ID of the client associated with the site.
+ *   - ClientName (string): The name of the client associated with the site.
+ *   - SupervisorName (string): The name of the supervisor for the site.
+ *   - idSystem (number): The ID of the system associated with the site.
+ *   - systemName (string): The name of the system associated with the site.
+ *   - idSystemType (number): The ID of the system type associated with the site.
+ *   - systemTypeName (string): The name of the system type associated with the site.
+ */
 async function getSitesPerClient(idClient) {
-  return await executeSp('sp_GetSitesPerClient', [
+  const sites = await executeSp('sp_GetSitesPerClient', [
     { name: 'idClient', value: idClient, type: sql.Int }
   ]);
+  return sites.recordset
 }
 
+/**
+ * Updates a site.
+ * @param {number} id - The ID of the site to update.
+ * @param {string} name - The updated name of the site.
+ * @param {number} supervisor - The updated ID of the supervisor for the site.
+ * @param {boolean} isActive - The updated active status of the site.
+ * @returns {Promise<string>} A promise that resolves to 'Site updated successfully.' if successful, or rejects with an error message if unsuccessful.
+ */
 async function updateSite(id, name, supervisor, isActive) {
-  return await executeSp('sp_UpdateSite', [
-    { name: 'id', value: id, type: sql.Int },
-    { name: 'name', value: name, type: sql.VarChar(50) },
-    { name: 'supervisor', value: supervisor, type: sql.Int },
-    { name: 'isActive', value: isActive, type: sql.Bit }
-  ]);
+  try {
+    await executeSp('sp_UpdateSite', [
+      { name: 'id', value: id, type: sql.Int },
+      { name: 'name', value: name, type: sql.VarChar(50) },
+      { name: 'supervisor', value: supervisor, type: sql.Int },
+      { name: 'isActive', value: isActive, type: sql.Bit }
+    ]);       
+    return 'Site updated successfully.';
+  } catch (error) {
+    throw new Error(`Site updated unsuccessfully: ${error.message}`);
+  }
 }
 
+/**
+ * Assigns a system to a site.
+ * @param {number} idSite - The ID of the site.
+ * @param {number} idSystem - The ID of the system to assign.
+ * @param {number} idSystemType - The ID of the system type to assign.
+ * @returns {Promise<string>} A promise that resolves to 'System assigned successfully.' if successful, or rejects with an error message if unsuccessful.
+ */
 async function assignSystemToSite(idSite, idSystem, idSystemType) {
-  return await executeSp('sp_AssignSystemToSite', [
-    { name: 'idSite', value: idSite, type: sql.Int },
-    { name: 'idSystem', value: idSystem, type: sql.SmallInt },
-    { name: 'idSystemType', value: idSystemType, type: sql.SmallInt }
-  ]);
+  try {
+    await executeSp('sp_AssignSystemToSite', [
+      { name: 'idSite', value: idSite, type: sql.Int },
+      { name: 'idSystem', value: idSystem, type: sql.SmallInt },
+      { name: 'idSystemType', value: idSystemType, type: sql.SmallInt }
+    ]);
+    return 'System assigned successfully.';
+  } catch (error) {
+    throw new Error(`System assigned unsuccessfully: ${error.message}`);
+  }
 }
 
+/**
+ * Disassociates a system from a site.
+ * @param {number} idSite - The ID of the site.
+ * @param {number} idSystem - The ID of the system to disassociate.
+ * @param {number} idSystemType - The ID of the system type to disassociate.
+ * @returns {Promise<string>} A promise that resolves to 'System disassociated successfully.' if successful, or rejects with an error message if unsuccessful.
+ */
 async function disassociateSiteToSystem(idSite, idSystem, idSystemType) {
-  return await executeSp('sp_DisassociateSiteToSystem', [
-    { name: 'idSite', value: idSite, type: sql.Int },
-    { name: 'idSystem', value: idSystem, type: sql.SmallInt },
-    { name: 'idSystemType', value: idSystemType, type: sql.SmallInt }
-  ]);
+  try {
+    await executeSp('sp_DisassociateSiteToSystem', [
+      { name: 'idSite', value: idSite, type: sql.Int },
+      { name: 'idSystem', value: idSystem, type: sql.SmallInt },
+      { name: 'idSystemType', value: idSystemType, type: sql.SmallInt }
+    ]);
+    return 'System disassociated successfully.';
+  } catch (error) {
+    throw new Error(`System disassociated unsuccessfully: ${error.message}`);
+  }
 }
 
 module.exports = {

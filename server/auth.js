@@ -32,7 +32,21 @@ function authenticateRole(...roles) {
   };
 }
 
-// User registration
+/**
+ * @route POST /register
+ * @description Register a new user
+ * @access Public
+ * @param {Object} req.body - The request body
+ * @param {string} req.body.username - The username of the user
+ * @param {string} req.body.password - The password of the user
+ * @param {string} req.body.email - The email address of the user
+ * @param {string} req.body.name - The first name of the user
+ * @param {string} req.body.lastname - The last name of the user
+ * @param {number} req.body.roleId - The role ID of the user
+ * @param {string} [req.body.phone] - The phone number of the user (optional)
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
 async function register(req, res) {
   try {
     const { username, password, email, name, lastname, roleId, phone } = req.body;
@@ -47,7 +61,16 @@ async function register(req, res) {
   }
 }
 
-// User login
+/**
+ * @route POST /login
+ * @description Authenticate and login a user
+ * @access Public
+ * @param {Object} req.body - The request body
+ * @param {string} req.body.usernameOrEmail - The username or email of the user
+ * @param {string} req.body.password - The password of the user
+ * @returns {Object}
+ * @returns {string} token - The JWT token for authentication
+ */
 async function login(req, res) {
   try {
     const { usernameOrEmail, password } = req.body;
@@ -82,10 +105,26 @@ async function login(req, res) {
   }
 }
 
+/**
+ * @route POST /logout
+ * @description Logout the user
+ * @access Public
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
 function logout(req, res) {
   res.json({ message: 'Logout successful' });
 }
 
+/**
+ * @route POST /forgot-password
+ * @description Send a password reset email to the user
+ * @access Public
+ * @param {Object} req.body - The request body
+ * @param {string} req.body.usernameOrEmail - The username or email of the user
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
 async function forgotPassword(req, res) {
   try {
     const { usernameOrEmail  } = req.body;
@@ -133,6 +172,16 @@ async function forgotPassword(req, res) {
   }
 };
 
+/**
+ * @route POST /reset-password
+ * @description Reset the user's password
+ * @access Public
+ * @param {Object} req.body - The request body
+ * @param {string} req.body.token - The password reset token
+ * @param {string} req.body.newPassword - The new password
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
 async function resetPassword(req, res) {
   try {
     const { token, newPassword } = req.body;

@@ -31,7 +31,7 @@ async function executeSp(spName, params = []) {
         continue;
       } else {
         if (isRaisError(error)) {
-          throw new DatabaseError('Database stored procedure error:', error.message);
+          throw new DatabaseError('Database stored procedure error:', error.message); //Recordar cambiar a futuro
         } else {
           throw error;
         }
