@@ -88,6 +88,25 @@ router.put('/:id', authenticateRole(2), async (req, res) => {
 });
 
 /**
+ * @route DELETE /:id
+ * @description Deletes a request
+ * @access Private
+ * @param {string} req.params.id - The ID of the request to update
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
+router.delete('/:id', authenticateRole(2), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await requestFunctions.delete(id);
+    res.json({ message: 'Request deleted successfully' });
+  } catch (error) {
+    console.error('Request deleted error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+/**
  * @route GET /:id
  * @description Get a request by ID
  * @access Private

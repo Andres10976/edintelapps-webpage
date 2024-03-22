@@ -24,6 +24,8 @@ router.post('/', authenticateRole(2, 3), async (req, res) => {
   }
 });
 
+
+
 /**
  * @route GET /
  * @description Get a list of active systems
@@ -63,6 +65,25 @@ router.put('/:id', authenticateRole(2, 3), async (req, res) => {
     res.json({ message: 'System updated successfully' });
   } catch (error) {
     console.error('Update system error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+/**
+ * @route DELETE /
+ * @description Delete an existing system
+ * @access Private (Roles: 2, 3)
+ * @param {Object} req.params - The request body
+ * @returns {Object} 201 - An object with a success message
+ * @returns {Object} 500 - An object with an error message
+ */
+router.delete('/:id', authenticateRole(2, 3), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await systemFunctions.deleteSystem(id);
+    res.status(201).json({ message: 'System deleted successfully' });
+  } catch (error) {
+    console.error('Delete system error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -140,6 +161,27 @@ router.put('/:id/types/:idType', authenticateRole(2, 3), async (req, res) => {
 });
 
 /**
+ * @route DELETE /:id/types/:idType
+ * @description Delete an existing system type
+ * @access Private (Roles: 2, 3)
+ * @param {Object} req.params - The request parameters
+ * @param {number} req.params.id - The ID of the system
+ * @param {number} req.params.idType - The ID of the system type
+ * @returns {Object} 200 - An object with a success message
+ * @returns {Object} 500 - An object with an error message
+ */
+router.delete('/:id/types/:idType', authenticateRole(2, 3), async (req, res) => {
+  try {
+    const { id, idType } = req.params;
+    await systemFunctions.deleteSystemType(idType);
+    res.json({ message: 'System type deleted successfully' });
+  } catch (error) {
+    console.error('Delete system type error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+/**
  * @route GET /types/all
  * @description Get a list of active system types with their associated system names
  * @access Private (Roles: 2, 3)
@@ -150,7 +192,7 @@ router.put('/:id/types/:idType', authenticateRole(2, 3), async (req, res) => {
  * @returns {string} 200.SystemTypeName - The name of the system type
  * @returns {Object} 500 - An object with an error message
  */
-router.get('/types/all', authenticateRole(2, 3), async (req, res) => {
+router.get('/types/all', authenticateRole(2, 3, 5), async (req, res) => {
   try {
     const systemTypes = await systemFunctions.getSystemTypesPerSystemWithNames();
     res.json(systemTypes);

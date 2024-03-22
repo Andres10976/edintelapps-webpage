@@ -40,9 +40,23 @@ async function createUser(username, passwordHash, salt, email, name, lastname, r
 async function getUsers() {
   try {
     const result = await executeSp('sp_GetUsers');
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Error retrieving users: ${error.message}`);
+  }
+}
+
+/**
+ * Retrieves a list of user roles with its id and name.
+ * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
+ * @throws {Error} - Throws an error if the user retrieval fails.
+ */
+async function getUserRoles() {
+  try {
+    const result = await executeSp('sp_GetRoles');
+    return result;
+  } catch (error) {
+    throw new Error(`Error retrieving user roles: ${error.message}`);
   }
 }
 
@@ -53,6 +67,7 @@ async function getUsers() {
  *   - id (number): The ID of the user.
  *   - email (string): The email address of the user.
  *   - phone (string): The phone number of the user.
+ *   - username (string): The username of the user.
  *   - roleId (number): The role ID of the user.
  *   - rolename (string): The name of the user's role.
  *   - name (string): The first name of the user.
@@ -68,7 +83,7 @@ async function getUserById(userId) {
     const result = await executeSp('sp_GetUserById', [
       { name: 'userId', value: userId, type: sql.Int }
     ]);
-    return result.recordset[0];
+    return result.at(0);
   } catch (error) {
     throw new Error(`Error retrieving user by ID: ${error.message}`);
   }
@@ -97,7 +112,7 @@ async function getUserByUsername(username) {
     const result = await executeSp('sp_GetUserByUsername', [
       { name: 'username', value: username, type: sql.VarChar(50) }
     ]);
-    return result.recordset[0];
+    return result.at(0);
   } catch (error) {
     throw new Error(`Error retrieving user by username: ${error.message}`);
   }
@@ -126,7 +141,7 @@ async function getUserByEmail(email) {
     const result = await executeSp('sp_GetUserByEmail', [
       { name: 'email', value: email, type: sql.VarChar(255) }
     ]);
-    return result.recordset[0];
+    return result.at(0);
   } catch (error) {
     throw new Error(`Error retrieving user by email: ${error.message}`);
   }
@@ -154,7 +169,7 @@ async function getUserByResetToken(token) {
     const result = await executeSp('sp_GetUserByResetToken', [
       { name: 'token', value: token, type: sql.VarChar(100) }
     ]);
-    return result.recordset[0];
+    return result.at(0);
   } catch (error) {
     throw new Error(`Error retrieving user by reset token: ${error.message}`);
   }
@@ -173,7 +188,7 @@ async function getUserByResetToken(token) {
  * @returns {Promise<void>} - A promise that resolves when the user is updated successfully.
  * @throws {Error} - Throws an error if the user update fails.
  */
-async function updateUser(id, username, email, name, lastname, roleId, phone, isActive) {
+async function updateUser(id, username, email, name, lastname, roleld, phone) {
   try {
     await executeSp('sp_UpdateUser', [
       { name: 'id', value: id, type: sql.Int },
@@ -181,9 +196,8 @@ async function updateUser(id, username, email, name, lastname, roleId, phone, is
       { name: 'email', value: email, type: sql.VarChar(255) },
       { name: 'name', value: name, type: sql.VarChar(50) },
       { name: 'lastname', value: lastname, type: sql.VarChar(50) },
-      { name: 'roleId', value: roleId, type: sql.SmallInt },
       { name: 'phone', value: phone, type: sql.VarChar(20) },
-      { name: 'isActive', value: isActive, type: sql.Bit }
+      { name: 'roleld', value: roleld, type: sql.SmallInt }
     ]);
     return 'User updated sucessfully'
   } catch (error) {
@@ -299,4 +313,5 @@ module.exports = {
   updateRole: updateUserRole,
   resetPassword: resetPasswordByUserId,
   savePasswordResetToken: savePasswordResetToken,
+  roles: getUserRoles
 };

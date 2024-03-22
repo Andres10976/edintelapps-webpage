@@ -30,7 +30,7 @@ async function createSystem(name) {
 async function getSystems() {
   try {
     const result = await executeSp('sp_GetSystems');
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error( `Get systems error: ${error.message}`);
   }
@@ -59,6 +59,24 @@ async function updateSystem(id, name, isActive = true) {
 }
 
 /**
+ * Deletes logically an existing system.
+ * @param {number} id - The ID of the system to delete.
+ * @returns {Promise<Object>} - A promise that resolves to an object with the following properties:
+ *   - status: A string indicating the status of the operation ('System deleted successfully.' if successful).
+ *   - error: An error object if the operation was unsuccessful.
+ */
+async function deleteSystem(id) {
+  try {
+    const result = await executeSp('sp_DeleteSystem', [
+      { name: 'id', value: id, type: sql.SmallInt }
+    ]);
+    return `System deleted sucessfully`;
+  } catch (error) {
+    throw new Error( `System deleted unsucessfully: ${error.message}`);
+  }
+}
+
+/**
  * Creates a new system type.
  * @param {string} name - The name of the system type.
  * @param {number} idSystem - The ID of the system associated with the system type.
@@ -79,6 +97,24 @@ async function createSystemType(name, idSystem) {
 }
 
 /**
+ * Deletes logically an existing system type.
+ * @param {number} id - The ID of the system type to delete.
+ * @returns {Promise<Object>} - A promise that resolves to an object with the following properties:
+ *   - status: A string indicating the status of the operation ('System type deleted successfully.' if successful).
+ *   - error: An error object if the operation was unsuccessful.
+ */
+async function deleteSystemType(id) {
+  try {
+    const result = await executeSp('sp_DeleteSystemType', [
+      { name: 'id', value: id, type: sql.SmallInt }
+    ]);
+    return `System type deleted sucessfully`;
+  } catch (error) {
+    throw new Error( `System type deleted unsucessfully: ${error.message}`);
+  }
+}
+
+/**
  * Retrieves a list of active system types for a specific system.
  * @param {number} idSystem - The ID of the system.
  * @returns {Promise<Object>} - A promise that resolves to an object with the following properties:
@@ -94,7 +130,7 @@ async function getSystemTypesPerSystem(idSystem) {
     const result = await executeSp('sp_GetSystemTypesPerSystem', [
       { name: 'idSystem', value: idSystem, type: sql.SmallInt },
     ]);
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error( `Get system types per system error: ${error.message}`);
   }
@@ -113,7 +149,7 @@ async function getSystemTypesPerSystem(idSystem) {
 async function getSystemTypes() {
   try {
     const result = await executeSp('sp_GetSystemTypes');
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error( `Get system types error: ${error.message}`);
   }
@@ -135,7 +171,7 @@ async function getSystemTypesPerSite(idSite) {
     const result = await executeSp('sp_GetSystemTypesPerSite', [
       { name: 'idSite', value: idSite, type: sql.Int },
     ]);
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Get syste types per site error: ${error.message}`);
   }
@@ -154,7 +190,7 @@ async function getSystemTypesPerSite(idSite) {
 async function getSystemTypesPerSystemWithNames() {
   try {
     const result = await executeSp('sp_GetSystemTypesPerSystemWithNames');
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Get system types per system with names error: ${error.message}`);
   }
@@ -178,7 +214,7 @@ async function updateSystemType(id, name, idSystem, isActive) {
       { name: 'idSystem', value: idSystem, type: sql.SmallInt },
       { name: 'isActive', value: isActive, type: sql.Bit }
     ]);
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Update system type error: ${error.message}`);
   }
@@ -188,10 +224,12 @@ module.exports = {
   createSystem,
   getSystems,
   updateSystem,
+  deleteSystem,
   createSystemType,
   getSystemTypes,
   getSystemTypesPerSystemWithNames,
   getSystemTypesPerSystem,
   getSystemTypesPerSite,
-  updateSystemType
+  updateSystemType,
+  deleteSystemType
 };

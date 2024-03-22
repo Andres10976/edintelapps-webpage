@@ -29,6 +29,7 @@ router.post('/', authenticateRole(2), async (req, res) => {
   }
 });
 
+
 /**
  * @route GET /
  * @description Get a list of active clients
@@ -109,6 +110,25 @@ router.put('/:id', authenticateRole(2, 3), async (req, res) => {
     res.status(200).json({ message: 'Client updated successfully' });
   } catch (error) {
     console.error('Update client error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+/**
+ * @route DELETE /:id
+ * @description Delete an existing client
+ * @access Private
+ * @param {string} req.params.id - The ID of the client to delete
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
+router.delete('/:id', authenticateRole(2, 3), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await clientFunctions.delete(id);
+    res.status(200).json({ message: 'Client deleted successfully' });
+  } catch (error) {
+    console.error('Delete client error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

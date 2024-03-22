@@ -1,8 +1,13 @@
 const express = require('express');
-const db = require('./db/db');
+const cors = require('cors');
 const { register, login, logout, resetPassword, forgotPassword } = require('./auth');
 require('dotenv').config();
 //const mail = require('./models/email')
+const corsOptions = {
+  origin: 'http://localhost:3001', // Only allow requests from your frontend
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
 
 const requestsRouter = require('./routes/requests');
 const clientsRouter = require('./routes/clients');
@@ -13,6 +18,8 @@ const techniciansRouter = require('./routes/technicians');
 
 const app = express();
 app.use(express.json());
+
+app.use(cors(corsOptions)); 
 
 app.post('/register', register);
 app.post('/login', login);

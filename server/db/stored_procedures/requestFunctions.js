@@ -60,7 +60,7 @@ async function getRequestsPerClient(idClient) {
     const result = await executeSp('sp_GetRequestsPerClient', [
       { name: 'idClient', value: idClient, type: sql.Int }
     ]);
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Error retrieving requests per client: ${error.message}`);
   }
@@ -78,7 +78,7 @@ async function getRequestPerSite(idSite) {
     const result = await executeSp('sp_GetRequestPerSite', [
       { name: 'idSite', value: idSite, type: sql.Int }
     ]);
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Error retrieving requests per site: ${error.message}`);
   }
@@ -118,9 +118,27 @@ async function getRequestById(idRequest) {
     const result = await executeSp('sp_GetRequestById', [
       { name: 'idRequest', value: idRequest, type: sql.BigInt }
     ]);
-    return result.recordset[0];
+    return result.at(0);
   } catch (error) {
     throw new Error(`Error retrieving request by ID: ${error.message}`);
+  }
+}
+
+/**
+ * Deletes a request by its ID.
+ * @param {number} idRequest - The ID of the request.
+ * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
+ *   - message: A string indicating the result of the operation.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function deleteRequest(idRequest) {
+  try {
+    const result = await executeSp('sp_DeleteRequest', [
+      { name: 'id', value: idRequest, type: sql.BigInt }
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(`Error deleting request: ${error.message}`);
   }
 }
 
@@ -136,7 +154,7 @@ async function getRequestsByAssignedTechnician(idTechnician) {
     const result = await executeSp('sp_GetRequestsByAssignedTechnician', [
       { name: 'idTechnician', value: idTechnician, type: sql.Int }
     ]);
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Error retrieving requests by assigned technician: ${error.message}`);
   }
@@ -151,7 +169,7 @@ async function getRequestsByAssignedTechnician(idTechnician) {
 async function getRequests() {
   try {
     const result = await executeSp('sp_GetRequests');
-    return result.recordset;
+    return result;
   } catch (error) {
     throw new Error(`Error retrieving requests: ${error.message}`);
   }
@@ -257,4 +275,5 @@ module.exports = {
   assignTechnician: assignTechnicianToRequest,
   acknowledgeTechnician: acknowledgeRequestByTechnician,
   startTechnician: startRequestByTechnician,
+  delete: deleteRequest
 };

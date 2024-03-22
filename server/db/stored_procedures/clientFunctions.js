@@ -47,7 +47,7 @@ async function createClient(name, phone, email, contactName, contactLastName, co
  */
 async function getClients() {
   const result = await executeSp('sp_GetClients');
-  return result.recordset;
+  return result;
 }
 
 /**
@@ -68,7 +68,24 @@ async function getClientById(clientId) {
   const result = await executeSp('sp_GetClientById', [
     { name: 'clientId', value: clientId, type: sql.Int }
   ]);
-  return result.recordset[0];
+  return result.at(0);
+}
+
+/**
+ * Delete a client by their ID.
+ * @param {number} clientId - The ID of the client to delete.
+ * @returns {Promise<string>} A promise that resolves to a success message indicating that the client was deleted successfully.
+ * @throws {Error} If the client deletion is unsuccessful.
+ */
+async function deleteClient(clientId) {
+  try {
+    const result = await executeSp('sp_DeleteClient', [
+      { name: 'id', value: clientId, type: sql.Int }
+    ]);
+    return 'Client deleted sucessfully';
+  } catch (error) {
+    throw new Error(`Client deleted unsuccessfully: ${error.message}`);
+  }
 }
 
 /**
@@ -106,5 +123,6 @@ module.exports = {
   create: createClient,
   getAll: getClients,
   get: getClientById,
-  update: updateClient
+  update: updateClient,
+  delete: deleteClient
 };

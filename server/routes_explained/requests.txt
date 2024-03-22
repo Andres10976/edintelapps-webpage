@@ -1,0 +1,74 @@
+Here is the extracted information from requests.js in a format similar to auth.txt:
+
+Function: POST /
+Parameters:
+- req.body: The request body
+  - idSite: The ID of the site
+  - code: The code of the request
+  - type: The type of the request 
+  - scope: The scope of the request
+  - idSystem: The ID of the system
+  - idSystemType: The ID of the system type
+Functionality:  
+- Create a new request with the provided data
+- Requires authentication with role ID 2
+Returns:
+- 201 Created with a success message if the request is created successfully
+- 500 Internal Server Error if an error occurs
+
+Function: GET /  
+Parameters: None
+Functionality:
+- Get all requests
+- Requires authentication with role ID 2 or 3
+Returns: 
+- Array of request objects
+- 500 Internal Server Error if an error occurs
+
+Function: PUT /:id
+Parameters:
+- req.params.id: The ID of the request to update
+- req.body: The request body
+  - idSite: The ID of the site
+  - code: The code of the request
+  - type: The type of the request
+  - scope: The scope of the request
+  - idSystem: The ID of the system
+Functionality:
+- Update a request with the provided data
+- Requires authentication with role ID 2  
+Returns:
+- Success message if the request is updated successfully
+- 500 Internal Server Error if an error occurs
+
+Function: GET /:id
+Parameters: 
+- req.params.id: The ID of the request
+Functionality:
+- Get a request by ID
+- Requires authentication with role ID 2 or 3
+Returns:
+- Request object
+- 500 Internal Server Error if an error occurs
+
+Function: DELETE /:id
+Parameters: 
+- req.params.id: The ID of the request
+Functionality:
+- Delete a request by ID
+- Requires authentication with role ID 2 or 3
+Returns:
+- Request object
+- 500 Internal Server Error if an error occurs
+
+Function: POST /:id/assign
+Parameters:
+- req.params.id: The ID of the request 
+- req.body: The request body
+  - idTechnician: The ID of the technician to assign
+Functionality: 
+- Assign a technician to a request
+- Requires authentication with role ID 2 or 3
+Returns:
+- Success message if the technician is assigned successfully 
+- 500 Internal Server Error if an error occurs

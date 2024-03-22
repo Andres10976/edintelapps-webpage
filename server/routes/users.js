@@ -6,6 +6,22 @@ const { userFunctions } = require('../db');
 const router = express.Router();
 
 /**
+ * Retrieves a list of user roles.
+ * @route GET /users/roles
+ * @returns {Array<Object>} An array of user objects.
+ * @access Private (Admin only)
+ */
+router.get('/roles', authenticateRole(2), async (req, res) => {
+  try {
+    const roles = await userFunctions.roles();
+    res.json(roles);
+  } catch (error) {
+    console.error('Get user roles error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+/**
  * Creates a new user.
  * @route POST /users
  * @returns {Object} Message indicating the user creation status.
@@ -14,7 +30,13 @@ const router = express.Router();
  */
 router.post('/', authenticateRole(2), async (req, res) => {
   try {
-    const { username, passwordHash, salt, email, name, lastname, roleId, phone } = req.body;
+    const { username, password, email, name, lastname, roleId, phone } = req.body;
+
+    // Generate salt and hash the password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Create the user with the generated passwordHash and salt
     await userFunctions.create(username, passwordHash, salt, email, name, lastname, roleId, phone);
     res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
@@ -47,6 +69,7 @@ router.get('/', authenticateRole(2), async (req, res) => {
  * @returns {number} id - The ID of the user.
  * @returns {string} email - The email address of the user.
  * @returns {string} phone - The phone number of the user.
+ * @returns {string} username - The username of the user.
  * @returns {number} roleId - The role ID of the user.
  * @returns {string} rolename - The name of the user's role.
  * @returns {string} name - The first name of the user.
@@ -57,7 +80,7 @@ router.get('/', authenticateRole(2), async (req, res) => {
  * @returns {Date} createdAt - The date and time when the user was created.
  * @access Private (Admin only)
  */
-router.get('/:id', authenticateRole(2), async (req, res) => {
+router.get('/:id', authenticateRole(2,3,4,5), async (req, res) => {
   try {
     const { id } = req.params;
     const user = await userFunctions.getById(id);
@@ -109,8 +132,8 @@ router.get('/username/:username', authenticateRole(2), async (req, res) => {
 router.put('/:id', authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, name, lastname, roleId, phone, isActive } = req.body;
-    await userFunctions.update(id, username, email, name, lastname, roleId, phone, isActive);
+    const { username, email, name, lastname, roleId, phone } = req.body;
+    await userFunctions.update(id, username, email, name, lastname, roleId, phone);
     res.json({ message: 'User updated successfully' });
   } catch (error) {
     console.error('Update user error:', error);
@@ -119,14 +142,14 @@ router.put('/:id', authenticateRole(2), async (req, res) => {
 });
 
 /**
- * Deactivates a user.
+ * Delete a user.
  * @route PUT /users/:id/deactivate
  * @param {number} id - The ID of the user to deactivate.
  * @returns {Object} Message indicating the user deactivation status.
  * @returns {string} message - The success message.
  * @access Private (Admin only)
  */
-router.put('/:id/deactivate', authenticateRole(2), async (req, res) => {
+router.delete('/:id', authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
     await userFunctions.deactivate(id);

@@ -9,8 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // Middleware for role-based authentication
 // 1: administrador
 // 2: operador
-// 3: tecnico
-// 4: cliente
+// 3: supervisor
+// 4: tecnico
+// 5: cliente
 
 function authenticateRole(...roles) {
   roles.push(1);
@@ -19,7 +20,7 @@ function authenticateRole(...roles) {
       const token = req.headers.authorization.split(' ')[1];
       const decodedToken = jwt.verify(token, JWT_SECRET);
       const user = await userFunctions.getById(decodedToken.userId);
-      if (roles.includes(user.roleId)) {
+      if (!roles.includes(user.roleId)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -96,7 +97,7 @@ async function login(req, res) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ userId: user.id, roleId: user.roleId, name: user.name }, JWT_SECRET, { expiresIn: '1d' });
 
     res.json({ token });
   } catch (error) {

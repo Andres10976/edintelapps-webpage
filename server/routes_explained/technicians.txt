@@ -1,0 +1,30 @@
+Here's the extracted information from technicians.js in the same format as auth.txt:
+
+Function: GET /technicians/:id/requests
+Parameters:
+- id: The ID of the technician
+Functionality:
+- Get requests assigned to a specific technician
+Returns:
+- 200 OK with an array of request objects assigned to the technician
+- 500 Internal Server Error if an error occurs
+
+Function: POST /technicians/:id/requests/:idRequest/acknowledge
+Parameters:
+- id: The ID of the technician
+- idRequest: The ID of the request
+Functionality:
+- Acknowledge a request by a technician
+Returns:
+- 200 OK with a success message if the request is acknowledged successfully
+- 500 Internal Server Error if an error occurs
+
+Function: POST /technicians/:id/requests/:idRequest/start
+Parameters:
+- id: The ID of the technician
+- idRequest: The ID of the request
+Functionality:
+- Start a request by a technician
+Returns:
+- 200 OK with a success message if the request is started successfully
+- 500 Internal Server Error if an error occurs

@@ -35,7 +35,7 @@ async function createSite(idClient, name, supervisor) {
  */
 async function getSites() {
   const sites = await executeSp('sp_GetSites');
-  return sites.recordset;
+  return sites;
 }
 
 /**
@@ -55,7 +55,7 @@ async function getSiteById(id) {
   const site = await executeSp('sp_GetSiteById', [
     { name: 'id', value: id, type: sql.Int }
   ]);
-  return site.recordset[0];
+  return site.at(0);
 }
 
 /**
@@ -75,7 +75,7 @@ async function getSitesPerClient(idClient) {
   const sites = await executeSp('sp_GetSitesPerClient', [
     { name: 'idClient', value: idClient, type: sql.Int }
   ]);
-  return sites.recordset
+  return sites
 }
 
 /**

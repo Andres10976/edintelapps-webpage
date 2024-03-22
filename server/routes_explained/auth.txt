@@ -1,0 +1,77 @@
+Function: authenticateRole
+Parameters:
+- ...roles: The roles allowed to access the protected route
+Functionality:
+- Middleware for role-based authentication
+- Verifies the user's role based on the provided JWT token
+- Allows access if the user's role is included in the specified roles or if the user is an administrator (role ID 1)
+Returns:
+- 403 Forbidden if the user's role is not allowed
+- 401 Unauthorized if the authentication fails
+
+Function: register
+Parameters:
+- req.body: The request body containing user registration data
+  - username: The username of the user
+  - password: The password of the user
+  - email: The email address of the user
+  - name: The first name of the user
+  - lastname: The last name of the user
+  - roleId: The role ID of the user
+  - phone (optional): The phone number of the user
+Functionality:
+- Registers a new user with the provided data
+- Hashes the password before storing it in the database
+Returns:
+- 201 Created with a success message if the user is registered successfully
+- 500 Internal Server Error if an error occurs
+
+Function: login
+Parameters:
+- req.body: The request body containing login credentials
+  - usernameOrEmail: The username or email of the user
+  - password: The password of the user
+Functionality:
+- Authenticates and logs in a user based on the provided credentials
+- Checks if the provided input is an email or username and retrieves the user accordingly
+- Compares the provided password with the stored hashed password
+- Generates a JWT token if the credentials are valid
+Returns:
+- JWT token if the login is successful
+- 401 Unauthorized if the credentials are invalid
+- 500 Internal Server Error if an error occurs
+
+Function: logout
+Parameters: None
+Functionality:
+- Logs out the user
+Returns:
+- Success message indicating successful logout
+
+Function: forgotPassword
+Parameters:
+- req.body: The request body containing the username or email of the user
+  - usernameOrEmail: The username or email of the user
+Functionality:
+- Sends a password reset email to the user
+- Generates a unique password reset token and saves it along with the expiration time to the user's record
+- Constructs a password reset link and sends it via email (TODO: implementation pending)
+Returns:
+- Success message indicating that the password reset email has been sent
+- 404 Not Found if the user is not found
+- 500 Internal Server Error if an error occurs
+
+Function: resetPassword
+Parameters:
+- req.body: The request body containing the password reset data
+  - token: The password reset token
+  - newPassword: The new password
+Functionality:
+- Resets the user's password based on the provided reset token and new password
+- Verifies the validity and expiration of the reset token
+- Hashes the new password and updates the user's password in the database
+- Clears the reset token after a successful password reset
+Returns:
+- Success message indicating that the password has been reset successfully
+- 400 Bad Request if the reset token is invalid or expired
+- 500 Internal Server Error if an error occurs
