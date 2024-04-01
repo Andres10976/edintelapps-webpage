@@ -1,8 +1,8 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { userFunctions } = require('./db');
-//Se importa el util de correo
-require('dotenv').config();
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { userFunctions } = require("./db");
+const { sendEmail } = require("./utils/mailHelper");
+require("dotenv").config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -17,18 +17,18 @@ function authenticateRole(...roles) {
   roles.push(1);
   return async (req, res, next) => {
     try {
-      const token = req.headers.authorization.split(' ')[1];
+      const token = req.headers.authorization.split(" ")[1];
       const decodedToken = jwt.verify(token, JWT_SECRET);
       const user = await userFunctions.getById(decodedToken.userId);
       if (!roles.includes(user.roleId)) {
-        return res.status(403).json({ message: 'Forbidden' });
+        return res.status(403).json({ message: "Forbidden" });
       }
 
       req.user = user;
       next();
     } catch (error) {
-      console.error('Authentication error:', error.message);
-      res.status(401).json({ message: 'Unauthorized' });
+      console.error("Authentication error:", error.message);
+      res.status(401).json({ message: "Unauthorized" });
     }
   };
 }
@@ -50,15 +50,24 @@ function authenticateRole(...roles) {
  */
 async function register(req, res) {
   try {
-    const { username, password, email, name, lastname, roleId, phone } = req.body;
+    const { username, password, email, name, lastname, roleId, phone } =
+      req.body;
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
-
-    await userFunctions.create(username, passwordHash, salt, email, name, lastname, roleId, phone);
-
-    res.status(201).json({ message: 'User registered successfully' });
+    await userFunctions.create(
+      username,
+      passwordHash,
+      salt,
+      email,
+      name,
+      lastname,
+      roleId,
+      phone
+    );
+    res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error' });
+    console.log("Register error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -77,7 +86,7 @@ async function login(req, res) {
     const { usernameOrEmail, password } = req.body;
     let user;
     // Check if the provided input is an email or username
-    if (usernameOrEmail.includes('@')) {
+    if (usernameOrEmail.includes("@")) {
       // If it contains '@', assume it's an email
       user = await userFunctions.getByEmail(usernameOrEmail);
     } else {
@@ -86,23 +95,27 @@ async function login(req, res) {
     }
 
     user = Array.isArray(user) ? user.at(0) : user;
-    
+
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user.id, roleId: user.roleId, name: user.name }, JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign(
+      { userId: user.id, roleId: user.roleId, name: user.name },
+      JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     res.json({ token });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 }
 
@@ -114,7 +127,7 @@ async function login(req, res) {
  * @returns {string} message - A message indicating the result of the operation
  */
 function logout(req, res) {
-  res.json({ message: 'Logout successful' });
+  res.json({ message: "Logout successful" });
 }
 
 /**
@@ -128,11 +141,11 @@ function logout(req, res) {
  */
 async function forgotPassword(req, res) {
   try {
-    const { usernameOrEmail  } = req.body;
+    const { usernameOrEmail } = req.body;
     let user;
 
     // Check if the provided input is an email or username
-    if (usernameOrEmail.includes('@')) {
+    if (usernameOrEmail.includes("@")) {
       // If it contains '@', assume it's an email
       user = await userFunctions.getUserByEmail(usernameOrEmail);
     } else {
@@ -141,21 +154,25 @@ async function forgotPassword(req, res) {
     }
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Generate a unique password reset token
-    const resetToken = crypto.randomBytes(20).toString('hex');
+    const resetToken = crypto.randomBytes(20).toString("hex");
     const resetTokenExpires = Date.now() + 1800000; // 1 hour from now
 
     // Save the reset token and expiration time to the user's record
-    await userFunctions.savePasswordResetToken(user.id, resetToken, resetTokenExpires);
+    await userFunctions.savePasswordResetToken(
+      user.id,
+      resetToken,
+      resetTokenExpires
+    );
 
     // Construct the password reset link
     const resetLink = `http://edintelapps/reset-password?token=${resetToken}`;
 
     // TODO:Send the password reset email
-    `await transporter.sendMail({
+    `await sendMail({
       from: 'your-email@gmail.com',
       to: email,
       subject: 'Password Reset',
@@ -164,14 +181,14 @@ async function forgotPassword(req, res) {
         <p>Please click the following link to reset your password:</p>
         <a href="${resetLink}">${resetLink}</a>
       \`,
-    });`
+    });`;
 
-    res.json({ message: 'Password reset email sent' });
+    res.json({ message: "Password reset email sent" });
   } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Forgot password error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-};
+}
 
 /**
  * @route POST /reset-password
@@ -191,7 +208,9 @@ async function resetPassword(req, res) {
     const user = await userFunctions.getByResetToken(token);
 
     if (!user || user.resetTokenExpires < Date.now()) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token" });
     }
 
     user = Array.isArray(user) ? user.at(0) : user;
@@ -203,12 +222,12 @@ async function resetPassword(req, res) {
     // Update the user's password and clear the reset token
     await userFunctions.resetPasswordById(user.id, newPasswordHash, null, null);
 
-    res.json({ message: 'Password reset successful' });
+    res.json({ message: "Password reset successful" });
   } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Reset password error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-};
+}
 
 module.exports = {
   authenticateRole,
@@ -216,5 +235,5 @@ module.exports = {
   login,
   logout,
   resetPassword,
-  forgotPassword
+  forgotPassword,
 };

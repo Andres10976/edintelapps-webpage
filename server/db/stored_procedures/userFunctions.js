@@ -1,5 +1,5 @@
-const sql = require('mssql');
-const { executeSp } = require('../db');
+const sql = require("mssql");
+const { executeSp } = require("../db");
 
 /**
  * Creates a new user.
@@ -14,19 +14,28 @@ const { executeSp } = require('../db');
  * @returns {Promise<void>} - A promise that resolves when the user is created successfully.
  * @throws {Error} - Throws an error if the user creation fails.
  */
-async function createUser(username, passwordHash, salt, email, name, lastname, roleId, phone = '') {
+async function createUser(
+  username,
+  passwordHash,
+  salt,
+  email,
+  name,
+  lastname,
+  roleId,
+  phone = ""
+) {
   try {
-    await executeSp('sp_CreateUser', [
-      { name: 'username', value: username, type: sql.VarChar(50) },
-      { name: 'passwordHash', value: passwordHash, type: sql.VarChar(255) },
-      { name: 'salt', value: salt, type: sql.NVarChar(100) },
-      { name: 'email', value: email, type: sql.VarChar(255) },
-      { name: 'name', value: name, type: sql.VarChar(50) },
-      { name: 'lastname', value: lastname, type: sql.VarChar(50) },
-      { name: 'roleId', value: roleId, type: sql.SmallInt },
-      { name: 'phone', value: phone, type: sql.VarChar(20) }
+    await executeSp("sp_CreateUser", [
+      { name: "username", value: username, type: sql.VarChar(50) },
+      { name: "passwordHash", value: passwordHash, type: sql.VarChar(255) },
+      { name: "salt", value: salt, type: sql.NVarChar(100) },
+      { name: "email", value: email, type: sql.VarChar(255) },
+      { name: "name", value: name, type: sql.VarChar(50) },
+      { name: "lastname", value: lastname, type: sql.VarChar(50) },
+      { name: "roleId", value: roleId, type: sql.SmallInt },
+      { name: "phone", value: phone, type: sql.VarChar(20) },
     ]);
-    return 'User created sucessfully';
+    return "User created sucessfully";
   } catch (error) {
     throw new Error(`Error creating user: ${error.message}`);
   }
@@ -39,7 +48,7 @@ async function createUser(username, passwordHash, salt, email, name, lastname, r
  */
 async function getUsers() {
   try {
-    const result = await executeSp('sp_GetUsers');
+    const result = await executeSp("sp_GetUsers");
     return result;
   } catch (error) {
     throw new Error(`Error retrieving users: ${error.message}`);
@@ -53,7 +62,7 @@ async function getUsers() {
  */
 async function getUserRoles() {
   try {
-    const result = await executeSp('sp_GetRoles');
+    const result = await executeSp("sp_GetRoles");
     return result;
   } catch (error) {
     throw new Error(`Error retrieving user roles: ${error.message}`);
@@ -80,8 +89,8 @@ async function getUserRoles() {
  */
 async function getUserById(userId) {
   try {
-    const result = await executeSp('sp_GetUserById', [
-      { name: 'userId', value: userId, type: sql.Int }
+    const result = await executeSp("sp_GetUserById", [
+      { name: "userId", value: userId, type: sql.Int },
     ]);
     return result.at(0);
   } catch (error) {
@@ -109,8 +118,8 @@ async function getUserById(userId) {
  */
 async function getUserByUsername(username) {
   try {
-    const result = await executeSp('sp_GetUserByUsername', [
-      { name: 'username', value: username, type: sql.VarChar(50) }
+    const result = await executeSp("sp_GetUserByUsername", [
+      { name: "username", value: username, type: sql.VarChar(50) },
     ]);
     return result.at(0);
   } catch (error) {
@@ -138,8 +147,8 @@ async function getUserByUsername(username) {
  */
 async function getUserByEmail(email) {
   try {
-    const result = await executeSp('sp_GetUserByEmail', [
-      { name: 'email', value: email, type: sql.VarChar(255) }
+    const result = await executeSp("sp_GetUserByEmail", [
+      { name: "email", value: email, type: sql.VarChar(255) },
     ]);
     return result.at(0);
   } catch (error) {
@@ -166,8 +175,8 @@ async function getUserByEmail(email) {
  */
 async function getUserByResetToken(token) {
   try {
-    const result = await executeSp('sp_GetUserByResetToken', [
-      { name: 'token', value: token, type: sql.VarChar(100) }
+    const result = await executeSp("sp_GetUserByResetToken", [
+      { name: "token", value: token, type: sql.VarChar(100) },
     ]);
     return result.at(0);
   } catch (error) {
@@ -188,18 +197,18 @@ async function getUserByResetToken(token) {
  * @returns {Promise<void>} - A promise that resolves when the user is updated successfully.
  * @throws {Error} - Throws an error if the user update fails.
  */
-async function updateUser(id, username, email, name, lastname, roleld, phone) {
+async function updateUser(id, username, email, name, lastname, roleId, phone) {
   try {
-    await executeSp('sp_UpdateUser', [
-      { name: 'id', value: id, type: sql.Int },
-      { name: 'username', value: username, type: sql.VarChar(50) },
-      { name: 'email', value: email, type: sql.VarChar(255) },
-      { name: 'name', value: name, type: sql.VarChar(50) },
-      { name: 'lastname', value: lastname, type: sql.VarChar(50) },
-      { name: 'phone', value: phone, type: sql.VarChar(20) },
-      { name: 'roleld', value: roleld, type: sql.SmallInt }
+    await executeSp("sp_UpdateUser", [
+      { name: "id", value: id, type: sql.Int },
+      { name: "username", value: username, type: sql.VarChar(50) },
+      { name: "email", value: email, type: sql.VarChar(255) },
+      { name: "name", value: name, type: sql.VarChar(50) },
+      { name: "lastname", value: lastname, type: sql.VarChar(50) },
+      { name: "phone", value: phone, type: sql.VarChar(20) },
+      { name: "roleId", value: roleId, type: sql.SmallInt },
     ]);
-    return 'User updated sucessfully'
+    return "User updated sucessfully";
   } catch (error) {
     throw new Error(`Error updating user: ${error.message}`);
   }
@@ -213,10 +222,10 @@ async function updateUser(id, username, email, name, lastname, roleld, phone) {
  */
 async function deactivateUser(userId) {
   try {
-    await executeSp('sp_DeactivateUser', [
-      { name: 'userId', value: userId, type: sql.Int }
+    await executeSp("sp_DeactivateUser", [
+      { name: "userId", value: userId, type: sql.Int },
     ]);
-    return 'User deactivated sucessfully'
+    return "User deactivated sucessfully";
   } catch (error) {
     throw new Error(`Error deactivating user: ${error.message}`);
   }
@@ -230,10 +239,10 @@ async function deactivateUser(userId) {
  */
 async function reactivateUser(userId) {
   try {
-    await executeSp('sp_ReactivateUser', [
-      { name: 'userId', value: userId, type: sql.Int }
+    await executeSp("sp_ReactivateUser", [
+      { name: "userId", value: userId, type: sql.Int },
     ]);
-    return 'User reactivated sucessfully'
+    return "User reactivated sucessfully";
   } catch (error) {
     throw new Error(`Error reactivating user: ${error.message}`);
   }
@@ -248,11 +257,11 @@ async function reactivateUser(userId) {
  */
 async function updateUserRole(userId, roleId) {
   try {
-    await executeSp('sp_UpdateUserRole', [
-      { name: 'userId', value: userId, type: sql.Int },
-      { name: 'roleId', value: roleId, type: sql.SmallInt }
+    await executeSp("sp_UpdateUserRole", [
+      { name: "userId", value: userId, type: sql.Int },
+      { name: "roleId", value: roleId, type: sql.SmallInt },
     ]);
-    return 'User role updated sucessfully'
+    return "User role updated sucessfully";
   } catch (error) {
     throw new Error(`Error updating user role: ${error.message}`);
   }
@@ -268,12 +277,16 @@ async function updateUserRole(userId, roleId) {
  */
 async function resetPasswordByUserId(id, newPasswordHash, salt) {
   try {
-    await executeSp('sp_ResetPasswordById', [
-      { name: 'id', value: id, type: sql.Int },
-      { name: 'newPasswordHash', value: newPasswordHash, type: sql.NVarChar(255) },
-      { name: 'salt', value: salt, type: sql.NVarChar(100) }
+    await executeSp("sp_ResetPasswordById", [
+      { name: "id", value: id, type: sql.Int },
+      {
+        name: "newPasswordHash",
+        value: newPasswordHash,
+        type: sql.NVarChar(255),
+      },
+      { name: "salt", value: salt, type: sql.NVarChar(100) },
     ]);
-    return 'Password reset sucessfully'
+    return "Password reset sucessfully";
   } catch (error) {
     throw new Error(`Error resetting password: ${error.message}`);
   }
@@ -289,12 +302,16 @@ async function resetPasswordByUserId(id, newPasswordHash, salt) {
  */
 async function savePasswordResetToken(id, resetToken, resetTokenExpires) {
   try {
-    await executeSp('sp_SavePasswordResetToken', [
-      { name: 'id', value: id, type: sql.Int },
-      { name: 'resetToken', value: resetToken, type: sql.VarChar(100) },
-      { name: 'resetTokenExpires', value: resetTokenExpires, type: sql.DateTime }
+    await executeSp("sp_SavePasswordResetToken", [
+      { name: "id", value: id, type: sql.Int },
+      { name: "resetToken", value: resetToken, type: sql.VarChar(100) },
+      {
+        name: "resetTokenExpires",
+        value: resetTokenExpires,
+        type: sql.DateTime,
+      },
     ]);
-    return 'Token saved sucessfully'
+    return "Token saved sucessfully";
   } catch (error) {
     throw new Error(`Error saving password reset token: ${error.message}`);
   }
@@ -313,5 +330,5 @@ module.exports = {
   updateRole: updateUserRole,
   resetPassword: resetPasswordByUserId,
   savePasswordResetToken: savePasswordResetToken,
-  roles: getUserRoles
+  roles: getUserRoles,
 };

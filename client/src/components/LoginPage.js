@@ -1,25 +1,25 @@
 // LoginPage.js
-import React, { useState, useRef, useEffect  } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Box, TextField, Button, Typography, Alert } from '@mui/material';
-import { styled } from '@mui/system';
-import axiosInstance from '../axiosInstance';
-import { jwtDecode } from 'jwt-decode';
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, TextField, Button, Typography, Alert } from "@mui/material";
+import { styled } from "@mui/system";
+import axiosInstance from "../axiosInstance";
+import { jwtDecode } from "jwt-decode";
 
 const LoginContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100vh',
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "100vh",
   backgroundColor: theme.palette.background.default,
 }));
 
 const LoginForm = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  width: '100%',
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  width: "100%",
   maxWidth: 400,
   padding: theme.spacing(4),
   backgroundColor: theme.palette.background.paper,
@@ -33,23 +33,23 @@ const LoginButton = styled(Button)(({ theme }) => ({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [usernameOrEmail, setUsernameOrEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const loginButtonRef = useRef(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     if (token) {
       try {
         // Decode the token to check if it's valid
         jwtDecode(token);
         // If the token is valid, redirect to the home page
-        navigate('/home');
+        navigate("/home");
       } catch (error) {
         // If the token is invalid, remove it from local storage
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
       }
     }
   }, [navigate]);
@@ -58,31 +58,40 @@ function LoginPage() {
     e.preventDefault();
 
     try {
-      const response = await axiosInstance.post('/login', {
+      const response = await axiosInstance.post("/login", {
         usernameOrEmail,
         password,
       });
 
       if (response.status === 200) {
         // Login successful, store the token in local storage
-        localStorage.setItem('token', response.data.token);
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        navigate('/home');
+        localStorage.setItem("token", response.data.token);
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${response.data.token}`;
+        // Wait for a short duration before navigating
+        setTimeout(() => {
+          navigate("/home");
+        }, 3000);
       } else {
-        setError('Invalid credentials. Please try again.');
+        setError(
+          "Los credenciales ingresados son inválidos. Intenta de nuevo."
+        );
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        setError('Invalid credentials. Please try again.');
+        setError(
+          "Los credenciales ingresados son inválidos. Intenta de nuevo."
+        );
       } else {
-        console.error('An error occurred during login:', error);
-        setError('An error occurred. Please try again later.');
+        console.error("An error occurred during login:", error);
+        setError("Un error ocurrió. Por favor intentalo más tarde.");
       }
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       loginButtonRef.current.click();
     }
   };
@@ -91,15 +100,15 @@ function LoginPage() {
     <LoginContainer>
       <LoginForm>
         <Typography variant="h5" component="h1" gutterBottom>
-          Login
+          Inicio de sesión
         </Typography>
         {error && (
-          <Alert severity="error" sx={{ width: '100%', marginBottom: 2 }}>
+          <Alert severity="error" sx={{ width: "100%", marginBottom: 2 }}>
             {error}
           </Alert>
         )}
         <TextField
-          label="Username or Email"
+          label="Nombre de usuario o correo"
           variant="outlined"
           margin="normal"
           fullWidth
@@ -108,7 +117,7 @@ function LoginPage() {
           onKeyPress={handleKeyPress}
         />
         <TextField
-          label="Password"
+          label="Contraseña"
           variant="outlined"
           margin="normal"
           fullWidth
@@ -123,7 +132,7 @@ function LoginPage() {
           color="primary"
           onClick={handleLogin}
         >
-          Login
+          Iniciar sesión
         </LoginButton>
       </LoginForm>
     </LoginContainer>

@@ -34,6 +34,26 @@ Returns:
 - 201 Created with a success message if the site is updated successfully
 - 500 Internal Server Error if an error occurs
 
+Function: DELETE /sites/{id}
+Parameters:
+- req.params: The request parameters
+  - id: The ID of the site to update
+Functionality:
+- Deletes a site with the provided data
+Returns:
+- 201 Created with a success message if the site is deleted successfully
+- 500 Internal Server Error if an error occurs
+
+Function: GET /sites/{id}
+Parameters:
+- req.params: The request parameters
+  - id: The ID of the site
+Functionality:
+- Retrieve the site associated with a specific id.
+Returns:
+- 200 OK with an site object.
+- 500 Internal Server Error if an error occurs
+
 Function: GET /sites/{id}/requests
 Parameters:
 - req.params: The request parameters
@@ -92,7 +112,7 @@ Parameters:
 - req.params: The request parameters
   - id: The ID of the site
 Functionality:
-- Retrieves system types associated with a specific site
+- Retrieves systems associated with a specific site
 Returns:
 - 200 OK with an array of system type objects associated with the site
 - 500 Internal Server Error if an error occurs

@@ -1,18 +1,21 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import '@fontsource/roboto';
-import LoginPage from './components/LoginPage';
-import HomePage from './components/HomePage';
-import SystemsPage from './components/SystemsPage';
-import UnauthorizedPage from './components/UnauthorizedPage';
-import NotFoundPage from './components/NotFoundPage';
-import PrivateRoute from './components/PrivateRoute';
-import MyProfile from './components/MyProfile';
-import UsersPage from './components/UsersPage';
-import RequestsPage from './components/RequestsPage';
-import { Navigate } from 'react-router-dom';
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import "@fontsource/roboto";
+import LoginPage from "./components/LoginPage";
+import HomePage from "./components/HomePage";
+import SystemsPage from "./components/SystemsPage";
+import UnauthorizedPage from "./components/UnauthorizedPage";
+import NotFoundPage from "./components/NotFoundPage";
+import PrivateRoute from "./components/PrivateRoute";
+import MyProfile from "./components/MyProfile";
+import UsersPage from "./components/UsersPage";
+import RequestsPage from "./components/RequestsPage";
+import ClientPage from "./components/ClientPage";
+import { Navigate } from "react-router-dom";
+import SitesPage from "./components/SitesPage";
+import TechnicianPage from "./components/TechniciansPage";
 
 const theme = createTheme();
 
@@ -68,6 +71,31 @@ function App() {
             element={
               <PrivateRoute allowedRoles={[1, 2, 3]}>
                 <RequestsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/clients"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 3]}>
+                <ClientPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/sites"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 3]}>
+                <SitesPage />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/technicians"
+            element={
+              <PrivateRoute allowedRoles={[3, 4]}>
+                <TechnicianPage />
               </PrivateRoute>
             }
           />

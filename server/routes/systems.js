@@ -1,6 +1,6 @@
-const express = require('express');
-const { authenticateRole } = require('../auth');
-const { systemFunctions } = require('../db');
+const express = require("express");
+const { authenticateRole } = require("../auth");
+const { systemFunctions } = require("../db");
 
 const router = express.Router();
 
@@ -13,18 +13,16 @@ const router = express.Router();
  * @returns {Object} 201 - An object with a success message
  * @returns {Object} 500 - An object with an error message
  */
-router.post('/', authenticateRole(2, 3), async (req, res) => {
+router.post("/", authenticateRole(2, 3), async (req, res) => {
   try {
     const { name } = req.body;
     await systemFunctions.createSystem(name);
-    res.status(201).json({ message: 'System created successfully' });
+    res.status(201).json({ message: "System created successfully" });
   } catch (error) {
-    console.error('Create system error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Create system error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
-
-
 
 /**
  * @route GET /
@@ -35,13 +33,13 @@ router.post('/', authenticateRole(2, 3), async (req, res) => {
  * @returns {string} 200.name - The name of the system
  * @returns {Object} 500 - An object with an error message
  */
-router.get('/', authenticateRole(2, 3), async (req, res) => {
+router.get("/", authenticateRole(2, 3), async (req, res) => {
   try {
     const systems = await systemFunctions.getSystems();
     res.json(systems);
   } catch (error) {
-    console.error('Get systems error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get systems error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -57,15 +55,15 @@ router.get('/', authenticateRole(2, 3), async (req, res) => {
  * @returns {Object} 200 - An object with a success message
  * @returns {Object} 500 - An object with an error message
  */
-router.put('/:id', authenticateRole(2, 3), async (req, res) => {
+router.put("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, isActive } = req.body;
     await systemFunctions.updateSystem(id, name, isActive);
-    res.json({ message: 'System updated successfully' });
+    res.json({ message: "System updated successfully" });
   } catch (error) {
-    console.error('Update system error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Update system error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -77,14 +75,14 @@ router.put('/:id', authenticateRole(2, 3), async (req, res) => {
  * @returns {Object} 201 - An object with a success message
  * @returns {Object} 500 - An object with an error message
  */
-router.delete('/:id', authenticateRole(2, 3), async (req, res) => {
+router.delete("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     await systemFunctions.deleteSystem(id);
-    res.status(201).json({ message: 'System deleted successfully' });
+    res.status(201).json({ message: "System deleted successfully" });
   } catch (error) {
-    console.error('Delete system error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Delete system error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -101,14 +99,14 @@ router.delete('/:id', authenticateRole(2, 3), async (req, res) => {
  * @returns {string} 200.systemName - The name of the associated system
  * @returns {Object} 500 - An object with an error message
  */
-router.get('/:id/types', authenticateRole(2, 3), async (req, res) => {
+router.get("/:id/types", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     const systemTypes = await systemFunctions.getSystemTypesPerSystem(id);
     res.json(systemTypes);
   } catch (error) {
-    console.error('Get system types error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get system types error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -123,15 +121,15 @@ router.get('/:id/types', authenticateRole(2, 3), async (req, res) => {
  * @returns {Object} 201 - An object with a success message
  * @returns {Object} 500 - An object with an error message
  */
-router.post('/:id/types', authenticateRole(2, 3), async (req, res) => {
+router.post("/:id/types", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id: idSystem } = req.params;
     const { name } = req.body;
     await systemFunctions.createSystemType(name, idSystem);
-    res.status(201).json({ message: 'System type created successfully' });
+    res.status(201).json({ message: "System type created successfully" });
   } catch (error) {
-    console.error('Create system type error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Create system type error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -148,15 +146,15 @@ router.post('/:id/types', authenticateRole(2, 3), async (req, res) => {
  * @returns {Object} 200 - An object with a success message
  * @returns {Object} 500 - An object with an error message
  */
-router.put('/:id/types/:idType', authenticateRole(2, 3), async (req, res) => {
+router.put("/:id/types/:idType", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id, idType } = req.params;
     const { name, isActive } = req.body;
     await systemFunctions.updateSystemType(idType, name, id, isActive);
-    res.json({ message: 'System type updated successfully' });
+    res.json({ message: "System type updated successfully" });
   } catch (error) {
-    console.error('Update system type error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Update system type error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -170,16 +168,20 @@ router.put('/:id/types/:idType', authenticateRole(2, 3), async (req, res) => {
  * @returns {Object} 200 - An object with a success message
  * @returns {Object} 500 - An object with an error message
  */
-router.delete('/:id/types/:idType', authenticateRole(2, 3), async (req, res) => {
-  try {
-    const { id, idType } = req.params;
-    await systemFunctions.deleteSystemType(idType);
-    res.json({ message: 'System type deleted successfully' });
-  } catch (error) {
-    console.error('Delete system type error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.delete(
+  "/:id/types/:idType",
+  authenticateRole(2, 3),
+  async (req, res) => {
+    try {
+      const { id, idType } = req.params;
+      await systemFunctions.deleteSystemType(idType);
+      res.json({ message: "System type deleted successfully" });
+    } catch (error) {
+      console.error("Delete system type error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 /**
  * @route GET /types/all
@@ -192,13 +194,14 @@ router.delete('/:id/types/:idType', authenticateRole(2, 3), async (req, res) => 
  * @returns {string} 200.SystemTypeName - The name of the system type
  * @returns {Object} 500 - An object with an error message
  */
-router.get('/types/all', authenticateRole(2, 3, 5), async (req, res) => {
+router.get("/types/all", authenticateRole(2, 3, 5), async (req, res) => {
   try {
-    const systemTypes = await systemFunctions.getSystemTypesPerSystemWithNames();
+    const systemTypes =
+      await systemFunctions.getSystemTypesPerSystemWithNames();
     res.json(systemTypes);
   } catch (error) {
-    console.error('Get system types error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get system types error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

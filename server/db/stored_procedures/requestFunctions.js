@@ -1,5 +1,5 @@
-const sql = require('mssql');
-const { executeSp } = require('../db');
+const sql = require("mssql");
+const { executeSp } = require("../db");
 
 /**
  * Creates a new request.
@@ -9,24 +9,22 @@ const { executeSp } = require('../db');
  * @param {string} scope - The scope of the request.
  * @param {number} createdBy - The ID of the user who created the request.
  * @param {number} idSystem - The ID of the system.
- * @param {number} idSystemType - The ID of the system type.
  * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
  *   - message: A string indicating the result of the operation.
  *   - idRequest: The ID of the created request (if successful).
  * @throws {Error} - If an error occurs during the operation.
  */
-async function createRequest(idSite, code, type, scope, createdBy, idSystem, idSystemType) {
+async function createRequest(idSite, code, type, scope, createdBy, idSystem) {
   try {
-    const result = await executeSp('sp_CreateRequest', [
-      { name: 'idSite', value: idSite, type: sql.Int },
-      { name: 'code', value: code, type: sql.VarChar(50) },
-      { name: 'type', value: type, type: sql.SmallInt },
-      { name: 'scope', value: scope, type: sql.VarChar(500) },
-      { name: 'createdBy', value: createdBy, type: sql.Int },
-      { name: 'idSystem', value: idSystem, type: sql.SmallInt },
-      { name: 'idSystemType', value: idSystemType, type: sql.SmallInt }
+    const result = await executeSp("sp_CreateRequest", [
+      { name: "idSite", value: idSite, type: sql.Int },
+      { name: "code", value: code, type: sql.VarChar(50) },
+      { name: "type", value: type, type: sql.SmallInt },
+      { name: "scope", value: scope, type: sql.VarChar(500) },
+      { name: "createdBy", value: createdBy, type: sql.Int },
+      { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);
-    return 'Request created sucessfully';
+    return "Request created sucessfully";
   } catch (error) {
     throw new Error(`Error creating request: ${error.message}`);
   }
@@ -43,8 +41,6 @@ async function createRequest(idSite, code, type, scope, createdBy, idSystem, idS
  *   - code: The code of the request.
  *   - idSystem: The ID of the system.
  *   - systemName: The name of the system.
- *   - idSystemType: The ID of the system type.
- *   - systemTypeName: The name of the system type.
  *   - idType: The ID of the request type.
  *   - requestTypeName: The name of the request type.
  *   - scope: The scope of the request.
@@ -57,8 +53,8 @@ async function createRequest(idSite, code, type, scope, createdBy, idSystem, idS
  */
 async function getRequestsPerClient(idClient) {
   try {
-    const result = await executeSp('sp_GetRequestsPerClient', [
-      { name: 'idClient', value: idClient, type: sql.Int }
+    const result = await executeSp("sp_GetRequestsPerClient", [
+      { name: "idClient", value: idClient, type: sql.Int },
     ]);
     return result;
   } catch (error) {
@@ -75,8 +71,8 @@ async function getRequestsPerClient(idClient) {
  */
 async function getRequestPerSite(idSite) {
   try {
-    const result = await executeSp('sp_GetRequestPerSite', [
-      { name: 'idSite', value: idSite, type: sql.Int }
+    const result = await executeSp("sp_GetRequestPerSite", [
+      { name: "idSite", value: idSite, type: sql.Int },
     ]);
     return result;
   } catch (error) {
@@ -95,8 +91,6 @@ async function getRequestPerSite(idSite) {
  *   - code: The code of the request.
  *   - idSystem: The ID of the system.
  *   - systemName: The name of the system.
- *   - idSystemType: The ID of the system type.
- *   - systemTypeName: The name of the system type.
  *   - idRequestType: The ID of the request type.
  *   - requestTypeName: The name of the request type.
  *   - scope: The scope of the request.
@@ -115,8 +109,8 @@ async function getRequestPerSite(idSite) {
  */
 async function getRequestById(idRequest) {
   try {
-    const result = await executeSp('sp_GetRequestById', [
-      { name: 'idRequest', value: idRequest, type: sql.BigInt }
+    const result = await executeSp("sp_GetRequestById", [
+      { name: "idRequest", value: idRequest, type: sql.BigInt },
     ]);
     return result.at(0);
   } catch (error) {
@@ -133,8 +127,8 @@ async function getRequestById(idRequest) {
  */
 async function deleteRequest(idRequest) {
   try {
-    const result = await executeSp('sp_DeleteRequest', [
-      { name: 'id', value: idRequest, type: sql.BigInt }
+    const result = await executeSp("sp_DeleteRequest", [
+      { name: "id", value: idRequest, type: sql.BigInt },
     ]);
     return result.at(0);
   } catch (error) {
@@ -151,12 +145,14 @@ async function deleteRequest(idRequest) {
  */
 async function getRequestsByAssignedTechnician(idTechnician) {
   try {
-    const result = await executeSp('sp_GetRequestsByAssignedTechnician', [
-      { name: 'idTechnician', value: idTechnician, type: sql.Int }
+    const result = await executeSp("sp_GetRequestsByAssignedTechnician", [
+      { name: "idTechnician", value: idTechnician, type: sql.Int },
     ]);
     return result;
   } catch (error) {
-    throw new Error(`Error retrieving requests by assigned technician: ${error.message}`);
+    throw new Error(
+      `Error retrieving requests by assigned technician: ${error.message}`
+    );
   }
 }
 
@@ -168,7 +164,7 @@ async function getRequestsByAssignedTechnician(idTechnician) {
  */
 async function getRequests() {
   try {
-    const result = await executeSp('sp_GetRequests');
+    const result = await executeSp("sp_GetRequests");
     return result;
   } catch (error) {
     throw new Error(`Error retrieving requests: ${error.message}`);
@@ -189,15 +185,15 @@ async function getRequests() {
  */
 async function updateRequest(id, idSite, code, type, scope, idSystem) {
   try {
-    const result = await executeSp('sp_UpdateRequest', [
-      { name: 'id', value: id, type: sql.BigInt },
-      { name: 'idSite', value: idSite, type: sql.Int },
-      { name: 'code', value: code, type: sql.VarChar(50) },
-      { name: 'type', value: type, type: sql.SmallInt },
-      { name: 'scope', value: scope, type: sql.VarChar(500) },
-      { name: 'idSystem', value: idSystem, type: sql.SmallInt }
+    const result = await executeSp("sp_UpdateRequest", [
+      { name: "id", value: id, type: sql.BigInt },
+      { name: "idSite", value: idSite, type: sql.Int },
+      { name: "code", value: code, type: sql.VarChar(50) },
+      { name: "type", value: type, type: sql.SmallInt },
+      { name: "scope", value: scope, type: sql.VarChar(500) },
+      { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);
-    return 'Request updated sucessfully';
+    return "Request updated sucessfully";
   } catch (error) {
     throw new Error(`Error updating request: ${error.message}`);
   }
@@ -214,9 +210,9 @@ async function updateRequest(id, idSite, code, type, scope, idSystem) {
  */
 async function assignTechnicianToRequest(idRequest, idTechnician) {
   try {
-    const result = await executeSp('sp_AssignTechnicianToRequest', [
-      { name: 'idRequest', value: idRequest, type: sql.BigInt },
-      { name: 'idTechnician', value: idTechnician, type: sql.Int }
+    const result = await executeSp("sp_AssignTechnicianToRequest", [
+      { name: "idRequest", value: idRequest, type: sql.BigInt },
+      { name: "idTechnician", value: idTechnician, type: sql.Int },
     ]);
     return "Technician assigned sucessfully";
   } catch (error) {
@@ -234,13 +230,15 @@ async function assignTechnicianToRequest(idRequest, idTechnician) {
  */
 async function acknowledgeRequestByTechnician(idRequest, idTechnician) {
   try {
-    const result = await executeSp('sp_AcknowledgeRequestByTechnician', [
-      { name: 'idRequest', value: idRequest, type: sql.BigInt },
-      { name: 'roleidTechnicianId', value: idTechnician, type: sql.Int }
+    const result = await executeSp("sp_AcknowledgeRequestByTechnician", [
+      { name: "idRequest", value: idRequest, type: sql.BigInt },
+      { name: "roleidTechnicianId", value: idTechnician, type: sql.Int },
     ]);
-    return 'Technician acknowleged sucessfully';
+    return "Technician acknowleged sucessfully";
   } catch (error) {
-    throw new Error(`Error acknowledging request by technician: ${error.message}`);
+    throw new Error(
+      `Error acknowledging request by technician: ${error.message}`
+    );
   }
 }
 
@@ -254,13 +252,47 @@ async function acknowledgeRequestByTechnician(idRequest, idTechnician) {
  */
 async function startRequestByTechnician(idRequest, idTechnician) {
   try {
-    const result = await executeSp('sp_StartRequestByTechnician', [
-      { name: 'idRequest', value: idRequest, type: sql.BigInt },
-      { name: 'roleidTechnicianId', value: idTechnician, type: sql.Int }
+    const result = await executeSp("sp_StartRequestByTechnician", [
+      { name: "idRequest", value: idRequest, type: sql.BigInt },
+      { name: "roleidTechnicianId", value: idTechnician, type: sql.Int },
     ]);
     return "Techncian started request sucessfully";
   } catch (error) {
     throw new Error(`Error starting request by technician: ${error.message}`);
+  }
+}
+
+/**
+ * Get the requests types.
+ * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests types.
+ *   Each object contains the following properties:
+ *   - id: The ID of the request type.
+ *   - name: The name of the request type.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function getRequestTypes() {
+  try {
+    const result = await executeSp("sp_GetRequestTypes");
+    return result;
+  } catch (error) {
+    throw new Error(`Error getting request types: ${error.message}`);
+  }
+}
+
+/**
+ * Get the requests types.
+ * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests status.
+ *   Each object contains the following properties:
+ *   - id: The ID of the request type.
+ *   - name: The name of the request type.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function getRequestStatus() {
+  try {
+    const result = await executeSp("sp_GetRequestStatuses");
+    return result;
+  } catch (error) {
+    throw new Error(`Error getting request statuses: ${error.message}`);
   }
 }
 
@@ -275,5 +307,7 @@ module.exports = {
   assignTechnician: assignTechnicianToRequest,
   acknowledgeTechnician: acknowledgeRequestByTechnician,
   startTechnician: startRequestByTechnician,
-  delete: deleteRequest
+  delete: deleteRequest,
+  getTypes: getRequestTypes,
+  getStatus: getRequestStatus,
 };

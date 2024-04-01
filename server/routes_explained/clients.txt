@@ -50,6 +50,16 @@ Returns:
 - 200 OK with a success message if the client is updated successfully
 - 500 Internal Server Error if an error occurs
 
+Function: DELETE /:id
+Parameters:
+- req.params.id: The ID of the client to delete
+Functionality:
+- Delete a client by their ID
+Returns:
+- Client object if found
+- 404 Not Found if the client is not found
+- 500 Internal Server Error if an error occurs
+
 Function: GET /:id/sites
 Parameters:
 - req.params.id: The ID of the client

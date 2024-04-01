@@ -1,6 +1,11 @@
-const express = require('express');
-const { authenticateRole } = require('../auth');
-const { clientFunctions, systemFunctions, siteFunctions, requestFunctions } = require('../db');
+const express = require("express");
+const { authenticateRole } = require("../auth");
+const {
+  clientFunctions,
+  systemFunctions,
+  siteFunctions,
+  requestFunctions,
+} = require("../db");
 const router = express.Router();
 
 /**
@@ -18,17 +23,32 @@ const router = express.Router();
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.post('/', authenticateRole(2), async (req, res) => {
+router.post("/", authenticateRole(2), async (req, res) => {
   try {
-    const { name, phone, email, contactName, contactLastName, contactPhone, contactEmail } = req.body;
-    await clientFunctions.create(name, phone, email, contactName, contactLastName, contactPhone, contactEmail);
-    res.status(201).json({ message: 'Client created successfully' });
+    const {
+      name,
+      phone,
+      email,
+      contactName,
+      contactLastName,
+      contactPhone,
+      contactEmail,
+    } = req.body;
+    await clientFunctions.create(
+      name,
+      phone,
+      email,
+      contactName,
+      contactLastName,
+      contactPhone,
+      contactEmail
+    );
+    res.status(201).json({ message: "Client created successfully" });
   } catch (error) {
-    console.error('Create client error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Create client error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
-
 
 /**
  * @route GET /
@@ -45,13 +65,13 @@ router.post('/', authenticateRole(2), async (req, res) => {
  * @returns {string} contactPhone - The phone number of the contact person
  * @returns {string} createdAt - The timestamp of when the client was created
  */
-router.get('/', authenticateRole(2, 3), async (req, res) => {
+router.get("/", authenticateRole(2, 3), async (req, res) => {
   try {
     const clients = await clientFunctions.getAll();
     res.json(clients);
   } catch (error) {
-    console.error('Get clients error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get clients error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -71,18 +91,18 @@ router.get('/', authenticateRole(2, 3), async (req, res) => {
  * @returns {string} contactPhone - The phone number of the contact person
  * @returns {string} createdAt - The timestamp of when the client was created
  */
-router.get('/:id', authenticateRole(2, 3, 5), async (req, res) => {
+router.get("/:id", authenticateRole(2, 3, 5), async (req, res) => {
   try {
     const { id } = req.params;
     const client = await clientFunctions.get(id);
     if (client) {
       res.json(client);
     } else {
-      res.status(404).json({ message: 'Client not found' });
+      res.status(404).json({ message: "Client not found" });
     }
   } catch (error) {
-    console.error('Get client by ID error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get client by ID error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -102,15 +122,32 @@ router.get('/:id', authenticateRole(2, 3, 5), async (req, res) => {
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.put('/:id', authenticateRole(2, 3), async (req, res) => {
+router.put("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, email, contactName, contactLastName, contactPhone, contactEmail } = req.body;
-    await clientFunctions.update(id, name, phone, email, contactName, contactLastName, contactPhone, contactEmail);
-    res.status(200).json({ message: 'Client updated successfully' });
+    const {
+      name,
+      phone,
+      email,
+      contactName,
+      contactLastName,
+      contactPhone,
+      contactEmail,
+    } = req.body;
+    await clientFunctions.update(
+      id,
+      name,
+      phone,
+      email,
+      contactName,
+      contactLastName,
+      contactPhone,
+      contactEmail
+    );
+    res.status(200).json({ message: "Client updated successfully" });
   } catch (error) {
-    console.error('Update client error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Update client error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -122,14 +159,14 @@ router.put('/:id', authenticateRole(2, 3), async (req, res) => {
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.delete('/:id', authenticateRole(2, 3), async (req, res) => {
+router.delete("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     await clientFunctions.delete(id);
-    res.status(200).json({ message: 'Client deleted successfully' });
+    res.status(200).json({ message: "Client deleted successfully" });
   } catch (error) {
-    console.error('Delete client error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Delete client error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -145,17 +182,15 @@ router.delete('/:id', authenticateRole(2, 3), async (req, res) => {
  * @returns {string} SupervisorName - The name of the supervisor for the site
  * @returns {number} idSystem - The ID of the system associated with the site
  * @returns {string} systemName - The name of the system associated with the site
- * @returns {number} idSystemType - The ID of the system type associated with the site
- * @returns {string} systemTypeName - The name of the system type associated with the site
  */
-router.get('/:id/sites', authenticateRole(2, 3, 5), async (req, res) => {
+router.get("/:id/sites", authenticateRole(2, 3, 5), async (req, res) => {
   try {
     const { id } = req.params;
     const sites = await siteFunctions.getByClient(id);
     res.json(sites);
   } catch (error) {
-    console.error('Get sites per client error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Get sites per client error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -170,15 +205,15 @@ router.get('/:id/sites', authenticateRole(2, 3, 5), async (req, res) => {
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.post('/:id/sites', authenticateRole(2), async (req, res) => {
+router.post("/:id/sites", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, supervisor } = req.body;
     await siteFunctions.create(id, name, supervisor);
-    res.status(201).json({ message: 'Site created successfully' });
+    res.status(201).json({ message: "Site created successfully" });
   } catch (error) {
-    console.error('Create site error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Create site error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -195,15 +230,15 @@ router.post('/:id/sites', authenticateRole(2), async (req, res) => {
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.put('/:id/sites/:idSite', authenticateRole(2), async (req, res) => {
+router.put("/:id/sites/:idSite", authenticateRole(2), async (req, res) => {
   try {
     const { id, idSite } = req.params;
     const { name, supervisor, isActive } = req.body;
     await siteFunctions.update(idSite, name, supervisor, isActive);
-    res.status(200).json({ message: 'Site updated successfully' });
+    res.status(200).json({ message: "Site updated successfully" });
   } catch (error) {
-    console.error('Site update error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Site update error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -220,42 +255,46 @@ router.put('/:id/sites/:idSite', authenticateRole(2), async (req, res) => {
  * @returns {string} SupervisorName - The name of the supervisor for the site
  * @returns {number} idSystem - The ID of the system associated with the site
  * @returns {string} systemName - The name of the system associated with the site
- * @returns {number} idSystemType - The ID of the system type associated with the site
- * @returns {string} systemTypeName - The name of the system type associated with the site
  */
-router.get('/:id/sites/:idSite', authenticateRole(2, 3, 5), async (req, res) => {
-  try {
-    const { id, idSite } = req.params;
-    const site = await siteFunctions.getById(idSite);
-    res.json(site);
-  } catch (error) {
-    console.error('Get site by ID error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.get(
+  "/:id/sites/:idSite",
+  authenticateRole(2, 3, 5),
+  async (req, res) => {
+    try {
+      const { id, idSite } = req.params;
+      const site = await siteFunctions.getById(idSite);
+      res.json(site);
+    } catch (error) {
+      console.error("Get site by ID error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 /**
  * @route GET /:id/sites/:idSite/systems
- * @description Get system types per site
+ * @description Get systems per site
  * @access Private
  * @param {string} req.params.id - The ID of the client
  * @param {string} req.params.idSite - The ID of the site
  * @returns {Object[]}
  * @returns {number} idSystem - The ID of the associated system
  * @returns {string} SystemName - The name of the associated system
- * @returns {number} idSystemType - The ID of the system type
- * @returns {string} SystemTypeName - The name of the system type
  */
-router.get('/:id/sites/:idSite/systems', authenticateRole(2, 3, 5), async (req, res) => {
-  try {
-    const { id, idSite } = req.params;
-    const systems = await systemFunctions.getSystemTypesPerSite(idSite);
-    res.json(systems);
-  } catch (error) {
-    console.error('Get systems per site error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.get(
+  "/:id/sites/:idSite/systems",
+  authenticateRole(2, 3, 5),
+  async (req, res) => {
+    try {
+      const { id, idSite } = req.params;
+      const systems = await systemFunctions.getSystemPerSite(idSite);
+      res.json(systems);
+    } catch (error) {
+      console.error("Get systems per site error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 /**
  * @route POST /:id/sites/:idSite/systems/assign
@@ -265,21 +304,24 @@ router.get('/:id/sites/:idSite/systems', authenticateRole(2, 3, 5), async (req, 
  * @param {string} req.params.idSite - The ID of the site
  * @param {Object} req.body - The request body
  * @param {number} req.body.idSystem - The ID of the system to assign
- * @param {number} req.body.idSystemType - The ID of the system type to assign
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.post('/:id/sites/:idSite/systems/assign', authenticateRole(2, 3), async (req, res) => {
-  try {
-    const { id, idSite } = req.params;
-    const { idSystem, idSystemType } = req.body;
-    await siteFunctions.assignSystem(idSite, idSystem, idSystemType);
-    res.status(200).json({ message: 'System assigned to site successfully' });
-  } catch (error) {
-    console.error('Assign system to site error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.post(
+  "/:id/sites/:idSite/systems/assign",
+  authenticateRole(2, 3),
+  async (req, res) => {
+    try {
+      const { id, idSite } = req.params;
+      const { idSystem } = req.body;
+      await siteFunctions.assignSystem(idSite, idSystem);
+      res.status(200).json({ message: "System assigned to site successfully" });
+    } catch (error) {
+      console.error("Assign system to site error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 /**
  * @route PUT /:id/sites/:idSite/systems/disassociate
@@ -289,21 +331,26 @@ router.post('/:id/sites/:idSite/systems/assign', authenticateRole(2, 3), async (
  * @param {string} req.params.idSite - The ID of the site
  * @param {Object} req.body - The request body
  * @param {number} req.body.idSystem - The ID of the system to disassociate
- * @param {number} req.body.idSystemType - The ID of the system type to disassociate
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.put('/:id/sites/:idSite/systems/disassociate', authenticateRole(2, 3), async (req, res) => {
-  try {
-    const { id, idSite } = req.params;
-    const { idSystem, idSystemType } = req.body;
-    await siteFunctions.disassociateSystem(idSite, idSystem, idSystemType);
-    res.status(200).json({ message: 'System disassociated from site successfully' });
-  } catch (error) {
-    console.error('Disassociate system from site error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.put(
+  "/:id/sites/:idSite/systems/disassociate",
+  authenticateRole(2, 3),
+  async (req, res) => {
+    try {
+      const { id, idSite } = req.params;
+      const { idSystem } = req.body;
+      await siteFunctions.disassociateSystem(idSite, idSystem);
+      res
+        .status(200)
+        .json({ message: "System disassociated from site successfully" });
+    } catch (error) {
+      console.error("Disassociate system from site error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 /**
  * @route GET /:id/sites/:idSite/requests
@@ -318,8 +365,6 @@ router.put('/:id/sites/:idSite/systems/disassociate', authenticateRole(2, 3), as
  * @returns {string} code - The code of the request
  * @returns {number} idSystem - The ID of the system
  * @returns {string} systemName - The name of the system
- * @returns {number} idSystemType - The ID of the system type
- * @returns {string} systemTypeName - The name of the system type
  * @returns {number} idType - The ID of the request type
  * @returns {string} requestTypeName - The name of the request type
  * @returns {string} scope - The scope of the request
@@ -329,17 +374,20 @@ router.put('/:id/sites/:idSite/systems/disassociate', authenticateRole(2, 3), as
  * @returns {string} createdByUsername - The username of the user who created the request
  * @returns {string} createdAt - The date and time when the request was created
  */
-router.get('/:id/sites/:idSite/requests', authenticateRole(2, 3), async (req, res) => {
-  try {
-    const { id, idSite } = req.params;
-    const requests = await requestFunctions.getBySite(idSite);
-    res.status(201).json(requests);
-  } catch (error) {
-    console.error('Get requests by site error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.get(
+  "/:id/sites/:idSite/requests",
+  authenticateRole(2, 3),
+  async (req, res) => {
+    try {
+      const { id, idSite } = req.params;
+      const requests = await requestFunctions.getBySite(idSite);
+      res.status(201).json(requests);
+    } catch (error) {
+      console.error("Get requests by site error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
-
+);
 
 /**
  * @route POST /:id/sites/:idSite/requests
@@ -351,23 +399,32 @@ router.get('/:id/sites/:idSite/requests', authenticateRole(2, 3), async (req, re
  * @param {string} req.body.code - The code of the request
  * @param {number} req.body.type - The type of the request
  * @param {string} req.body.scope - The scope of the request
- * @param {number} req.body.idSystem - The ID of the system
- * @param {number} req.body.idSystemType - The ID of the system type
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  * @returns {number} idRequest - The ID of the created request (if successful)
  */
-router.post('/:id/sites/:idSite/requests', authenticateRole(2, 5), async (req, res) => {
-  try {
-    const { id, idSite } = req.params;
-    const { code, type, scope, idSystem, idSystemType } = req.body;
-    await requestFunctions.create(idSite, code, type, scope, req.user.id, idSystem, idSystemType);
-    res.status(201).json({ message: 'Request created successfully' });
-  } catch (error) {
-    console.error('Create request error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.post(
+  "/:id/sites/:idSite/requests",
+  authenticateRole(2, 5),
+  async (req, res) => {
+    try {
+      const { id, idSite } = req.params;
+      const { code, type, scope, idSystem } = req.body;
+      await requestFunctions.create(
+        idSite,
+        code,
+        type,
+        scope,
+        req.user.id,
+        idSystem
+      );
+      res.status(201).json({ message: "Request created successfully" });
+    } catch (error) {
+      console.error("Create request error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 /**
  * @route GET /:id/sites/:idSite/requests/:idRequest
@@ -383,8 +440,6 @@ router.post('/:id/sites/:idSite/requests', authenticateRole(2, 5), async (req, r
  * @returns {string} code - The code of the request
  * @returns {number} idSystem - The ID of the system
  * @returns {string} systemName - The name of the system
- * @returns {number} idSystemType - The ID of the system type
- * @returns {string} systemTypeName - The name of the system type
  * @returns {number} idRequestType - The ID of the request type
  * @returns {string} requestTypeName - The name of the request type
  * @returns {string} scope - The scope of the request
@@ -400,16 +455,20 @@ router.post('/:id/sites/:idSite/requests', authenticateRole(2, 5), async (req, r
  * @returns {string} technicianAcknowledgeDatetime - The date and time when the technician acknowledged the request
  * @returns {string} technicianStartingWorkDatetime - The date and time when the technician started working on the request
  */
-router.get('/:id/sites/:idSite/requests/:idRequest', authenticateRole(2, 3), async (req, res) => {
-  try {
-    const { id, idSite, idRequest } = req.params;
-    const request = await requestFunctions.getById(idRequest);
-    res.status(201).json(request);
-  } catch (error) {
-    console.error('Get request by id error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.get(
+  "/:id/sites/:idSite/requests/:idRequest",
+  authenticateRole(2, 3),
+  async (req, res) => {
+    try {
+      const { id, idSite, idRequest } = req.params;
+      const request = await requestFunctions.getById(idRequest);
+      res.status(201).json(request);
+    } catch (error) {
+      console.error("Get request by id error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 /**
  * @route PUT /:id/sites/:idSite/requests/:idRequest
@@ -426,16 +485,20 @@ router.get('/:id/sites/:idSite/requests/:idRequest', authenticateRole(2, 3), asy
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.put('/:id/sites/:idSite/requests/:idRequest', authenticateRole(2), async (req, res) => {
-  try {
-    const { id, idRequest } = req.params;
-    const { code, type, scope, idSystem } = req.body;
-    await requestFunctions.update(idRequest, id, code, type, scope, idSystem);
-    res.status(200).json({ message: 'Request updated successfully' });
-  } catch (error) {
-    console.error('Update request error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+router.put(
+  "/:id/sites/:idSite/requests/:idRequest",
+  authenticateRole(2),
+  async (req, res) => {
+    try {
+      const { id, idRequest } = req.params;
+      const { code, type, scope, idSystem } = req.body;
+      await requestFunctions.update(idRequest, id, code, type, scope, idSystem);
+      res.status(200).json({ message: "Request updated successfully" });
+    } catch (error) {
+      console.error("Update request error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 
 module.exports = router;

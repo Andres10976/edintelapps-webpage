@@ -72,3 +72,21 @@ Functionality:
 Returns:
 - Success message if the technician is assigned successfully 
 - 500 Internal Server Error if an error occurs
+
+Function: GET /status  
+Parameters: None
+Functionality:
+- Get all request status
+- Requires authentication with role ID 2 or 3
+Returns: 
+- Array of request status objects
+- 500 Internal Server Error if an error occurs
+
+Function: GET /types
+Parameters: None
+Functionality:
+- Get all request types
+- Requires authentication with role ID 2 or 3
+Returns: 
+- Array of request status objects
+- 500 Internal Server Error if an error occurs

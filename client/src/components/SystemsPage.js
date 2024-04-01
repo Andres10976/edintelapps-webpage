@@ -1,14 +1,27 @@
 // Systems.js
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { styled } from '@mui/system';
-import Header from './Header';
-import axiosInstance from '../axiosInstance';
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+} from "@mui/material";
+import { styled } from "@mui/system";
+import Header from "./Header";
+import axiosInstance from "../axiosInstance";
 
 const SystemsContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  minHeight: '100vh',
+  display: "flex",
+  flexDirection: "column",
+  minHeight: "100vh",
 }));
 
 const Main = styled(Box)(({ theme }) => ({
@@ -18,13 +31,13 @@ const Main = styled(Box)(({ theme }) => ({
 
 function Systems() {
   const [systems, setSystems] = useState([]);
-  const [systemName, setSystemName] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [systemName, setSystemName] = useState("");
   const [selectedSystem, setSelectedSystem] = useState(null);
-  const [selectedSystemType, setSelectedSystemType] = useState(null);
-  const [systemTypes, setSystemTypes] = useState([]);
-  const [systemTypeName, setSystemTypeName] = useState('');
-  const [deleteSystemConfirmationOpen, setDeleteSystemConfirmationOpen] = useState(false);
-  const [deleteSystemTypeConfirmationOpen, setDeleteSystemTypeConfirmationOpen] = useState(false);
+  const [systemToDelete, setSystemToDelete] = useState(null);
+  const [createSystemOpen, setCreateSystemOpen] = useState(false);
+  const [deleteSystemConfirmationOpen, setDeleteSystemConfirmationOpen] =
+    useState(false);
 
   useEffect(() => {
     fetchSystems();
@@ -32,20 +45,21 @@ function Systems() {
 
   const fetchSystems = async () => {
     try {
-      const response = await axiosInstance.get('/systems');
+      const response = await axiosInstance.get("/systems");
       setSystems(response.data);
     } catch (error) {
-      console.error('Error fetching systems:', error);
+      console.error("Error fetching systems:", error);
     }
   };
 
   const createSystem = async () => {
     try {
-      await axiosInstance.post('/systems', { name: systemName });
-      setSystemName('');
+      await axiosInstance.post("/systems", { name: systemName });
+      setSystemName("");
       fetchSystems();
+      setCreateSystemOpen(false);
     } catch (error) {
-      console.error('Error creating system:', error);
+      console.error("Error creating system:", error);
     }
   };
 
@@ -55,81 +69,45 @@ function Systems() {
         name: selectedSystem.name,
       });
       fetchSystems();
+      setSelectedSystem(null);
     } catch (error) {
-      console.error('Error updating system:', error);
+      console.error("Error updating system:", error);
     }
   };
 
   const deleteSystem = async () => {
     try {
-      await axiosInstance.delete(`/systems/${selectedSystem.id}`);
+      await axiosInstance.delete(`/systems/${systemToDelete.id}`);
       fetchSystems();
-      setSelectedSystem(null);
+      setSystemToDelete(null);
       setDeleteSystemConfirmationOpen(false);
     } catch (error) {
-      console.error('Error deleting system:', error);
+      console.error("Error deleting system:", error);
     }
   };
 
-  const fetchSystemTypes = async (systemId) => {
-    try {
-      const response = await axiosInstance.get(`/systems/${systemId}/types`);
-      setSystemTypes(response.data);
-    } catch (error) {
-      console.error('Error fetching system types:', error);
-    }
+  const openCreateSystem = () => {
+    setCreateSystemOpen(true);
   };
 
-  const createSystemType = async () => {
-    try {
-      await axiosInstance.post(`/systems/${selectedSystem.id}/types`, {
-        name: systemTypeName,
-      });
-      setSystemTypeName('');
-      fetchSystemTypes(selectedSystem.id);
-    } catch (error) {
-      console.error('Error creating system type:', error);
-    }
+  const closeCreateSystem = () => {
+    setCreateSystemOpen(false);
+    setSystemName("");
   };
 
-  const updateSystemType = async () => {
-    try {
-      await axiosInstance.put(`/systems/${selectedSystem.id}/types/${selectedSystemType.id}`, {
-        name: selectedSystemType.name,
-      });
-      fetchSystemTypes(selectedSystem.id);
-      setSelectedSystemType(null);
-    } catch (error) {
-      console.error('Error updating system type:', error);
-    }
-  };
-
-  const deleteSystemType = async () => {
-    try {
-      await axiosInstance.delete(`/systems/${selectedSystem.id}/types/${selectedSystemType.id}`);
-      fetchSystemTypes(selectedSystem.id);
-      setSelectedSystemType(null);
-      setDeleteSystemTypeConfirmationOpen(false);
-    } catch (error) {
-      console.error('Error deleting system type:', error);
-    }
-  };
-
-  const openDeleteSystemConfirmation = () => {
+  const openDeleteSystemConfirmation = (system) => {
+    setSystemToDelete(system);
     setDeleteSystemConfirmationOpen(true);
   };
 
   const closeDeleteSystemConfirmation = () => {
     setDeleteSystemConfirmationOpen(false);
+    setSystemToDelete(null);
   };
 
-  const openDeleteSystemTypeConfirmation = () => {
-    setDeleteSystemTypeConfirmationOpen(true);
-  };
-
-  const closeDeleteSystemTypeConfirmation = () => {
-    setDeleteSystemTypeConfirmationOpen(false);
-  };
+  const filteredSystems = systems.filter((system) =>
+    system.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <SystemsContainer>
@@ -139,161 +117,128 @@ function Systems() {
           Sistemas
         </Typography>
 
-        <Box mb={4}>
+        <Box mb={4} display="flex" alignItems="center">
           <TextField
-            label="Nombre del sistema"
-            value={systemName}
-            onChange={(e) => setSystemName(e.target.value)}
+            label="Buscar sistema"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
             size="small"
+            sx={{ mr: 2 }}
           />
-          <Button variant="contained" color="primary" onClick={createSystem} style={{ marginLeft: '1rem' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={openCreateSystem}
+          >
             Crear sistema
           </Button>
         </Box>
 
-        <Box mb={4}>
-          <Typography variant="h6" component="h2" gutterBottom>
-            Sistemas activos
-          </Typography>
-          {systems.map((system) => (
-            <Box key={system.id} mb={2}>
-              <Typography variant="subtitle1">{system.name}</Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                size="small"
-                onClick={() => {
-                  setSelectedSystem(system);
-                  fetchSystemTypes(system.id);
-                }}
-              >
-                Editar
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="small"
-                onClick={openDeleteSystemConfirmation}
-                style={{ marginLeft: '0.5rem' }}
-              >
-                Eliminar
-              </Button>
-            </Box>
-          ))}
-        </Box>
-
-        {selectedSystem && (
-          <>
-            <Box mb={4}>
-              <Typography variant="h6" component="h2" gutterBottom>
-                Editar sistema
-              </Typography>
-              <TextField
-                label="Nombre del sistema"
-                value={selectedSystem.name}
-                onChange={(e) => setSelectedSystem({ ...selectedSystem, name: e.target.value })}
-                variant="outlined"
-                size="small"
-              />
-              <Button variant="contained" color="primary" onClick={updateSystem} style={{ marginLeft: '1rem' }}>
-                Actualizar sistema
-              </Button>
-            </Box>
-
-            <Box mb={4}>
-              <Typography variant="h6" component="h2" gutterBottom>
-                Tipos de sistema
-              </Typography>
-              {systemTypes.map((type) => (
-                <Box key={type.id} mb={2}>
-                  <Typography variant="subtitle1">{type.name}</Typography>
+        <Grid container spacing={2}>
+          {filteredSystems.map((system) => (
+            <Grid item xs={12} sm={6} md={4} key={system.id}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" component="div">
+                    {system.name}
+                  </Typography>
+                </CardContent>
+                <CardActions>
                   <Button
                     variant="outlined"
                     color="primary"
                     size="small"
-                    onClick={() => setSelectedSystemType(type)}
+                    onClick={() => setSelectedSystem(system)}
                   >
                     Editar
                   </Button>
-                </Box>
-              ))}
-              <TextField
-                label="Nombre del tipo de sistema"
-                value={systemTypeName}
-                onChange={(e) => setSystemTypeName(e.target.value)}
-                variant="outlined"
-                size="small"
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={createSystemType}
-                style={{ marginLeft: '1rem' }}
-              >
-                Crear tipo de sistema
-              </Button>
-            </Box>
-
-            {selectedSystemType && (
-              <Box mb={4}>
-                <Typography variant="h6" component="h2" gutterBottom>
-                  Editar tipo de sistema
-                </Typography>
-                <TextField
-                  label="Nombre del tipo de sistema"
-                  value={selectedSystemType.name}
-                  onChange={(e) => setSelectedSystemType({ ...selectedSystemType, name: e.target.value })}
-                  variant="outlined"
-                  size="small"
-                />
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={updateSystemType}
-                  style={{ marginLeft: '1rem' }}
-                >
-                  Actualizar tipo de sistema
-                </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={openDeleteSystemTypeConfirmation}
-                  style={{ marginLeft: '1rem' }}
-                >
-                  Eliminar tipo de sistema
-                </Button>
-              </Box>
-            )}
-          </>
-        )}
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    size="small"
+                    onClick={() => openDeleteSystemConfirmation(system)}
+                  >
+                    Eliminar
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       </Main>
 
-      <Dialog open={deleteSystemConfirmationOpen} onClose={closeDeleteSystemConfirmation}>
+      <Dialog open={createSystemOpen} onClose={closeCreateSystem}>
+        <DialogTitle>Crear sistema</DialogTitle>
+        <DialogContent>
+          <Box mt={2}>
+            <TextField
+              label="Nombre del sistema"
+              value={systemName}
+              onChange={(e) => setSystemName(e.target.value)}
+              variant="outlined"
+              size="small"
+              required
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCreateSystem} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={createSystem} color="primary" autoFocus>
+            Crear
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={selectedSystem !== null}
+        onClose={() => setSelectedSystem(null)}
+      >
+        <DialogTitle>Editar sistema</DialogTitle>
+        <DialogContent>
+          <Box mt={2}>
+            <TextField
+              label="Nombre del sistema"
+              value={selectedSystem?.name || ""}
+              onChange={(e) =>
+                setSelectedSystem({ ...selectedSystem, name: e.target.value })
+              }
+              variant="outlined"
+              size="small"
+              required
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedSystem(null)} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={updateSystem} color="primary" autoFocus>
+            Actualizar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={deleteSystemConfirmationOpen}
+        onClose={closeDeleteSystemConfirmation}
+      >
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
-          <Typography>¿Estás seguro de que deseas eliminar el sistema "{selectedSystem?.name}"?</Typography>
+          <Typography>
+            ¿Estás seguro de que deseas eliminar el sistema "
+            {systemToDelete?.name}"?
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDeleteSystemConfirmation} color="primary">
             Cancelar
           </Button>
           <Button onClick={deleteSystem} color="secondary" autoFocus>
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={deleteSystemTypeConfirmationOpen} onClose={closeDeleteSystemTypeConfirmation}>
-        <DialogTitle>Confirmar eliminación</DialogTitle>
-        <DialogContent>
-          <Typography>¿Estás seguro de que deseas eliminar el tipo de sistema "{selectedSystemType?.name}"?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteSystemTypeConfirmation} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={deleteSystemType} color="secondary" autoFocus>
             Eliminar
           </Button>
         </DialogActions>
