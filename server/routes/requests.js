@@ -1,8 +1,24 @@
 const express = require("express");
 const { authenticateRole } = require("../auth");
 const { requestFunctions } = require("../db");
-
+const { generateUniqueFilenameWithUUID } = require("../utils/randomHelper");
+const multer = require('multer');
+const path = require('path');
 const router = express.Router();
+const fs = require('fs').promises;
+
+// Set up multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../files'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueFileName = generateUniqueFilenameWithUUID(file.originalname);
+    cb(null, uniqueFileName);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 /**
  * @route POST /
@@ -17,10 +33,12 @@ const router = express.Router();
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.post("/", authenticateRole(2), async (req, res) => {
+router.post("/", authenticateRole(2, 5), async (req, res) => {
   try {
-    const { idSite, code, type, scope, idSystem } = req.body;
-    await requestFunctions.create(
+    let { idSite, code, type, scope, idSystem } = req.body;
+    if(code === '')
+      code = null;
+    const result = await requestFunctions.create(
       idSite,
       code,
       type,
@@ -28,10 +46,10 @@ router.post("/", authenticateRole(2), async (req, res) => {
       req.user.id,
       idSystem
     );
-    res.status(201).json({ message: "Request created successfully" });
+    res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create request error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -61,7 +79,7 @@ router.get("/", authenticateRole(2, 3), async (req, res) => {
     res.json(requests);
   } catch (error) {
     console.error("Get requests error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -79,7 +97,7 @@ router.get("/types", authenticateRole(2, 3), async (req, res) => {
     res.json(requestTypes);
   } catch (error) {
     console.error("Get request types error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -97,7 +115,7 @@ router.get("/statuses", authenticateRole(2, 3), async (req, res) => {
     res.json(requestStatus);
   } catch (error) {
     console.error("Get request status error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -119,11 +137,11 @@ router.put("/:id", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
     const { idSite, code, type, scope, idSystem } = req.body;
-    await requestFunctions.update(id, idSite, code, type, scope, idSystem);
-    res.json({ message: "Request updated successfully" });
+    const result = await requestFunctions.update(id, idSite, code, type, scope, idSystem);
+    res.json({ message: result.message });
   } catch (error) {
     console.error("Request update error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -138,11 +156,11 @@ router.put("/:id", authenticateRole(2), async (req, res) => {
 router.delete("/:id", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
-    await requestFunctions.delete(id);
-    res.json({ message: "Request deleted successfully" });
+    const result = await requestFunctions.delete(id);
+    res.json({ message: result.message });
   } catch (error) {
     console.error("Request deleted error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -180,7 +198,7 @@ router.get("/:id", authenticateRole(2, 3), async (req, res) => {
     res.json(request);
   } catch (error) {
     console.error("Obtain by id request error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -198,11 +216,162 @@ router.post("/:id/assign", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     const { idTechnician } = req.body;
-    await requestFunctions.assignTechnician(id, idTechnician);
-    res.json({ message: "Technician assigned successfully" });
+    const request = await requestFunctions.getById(id);
+    `if(request.idTechnicianAssigned){
+      //Se envia correo diciendo que se deshafilio a la solicitud
+    }`
+    const result = await requestFunctions.assignTechnician(id, idTechnician);
+    res.json({ message: result.message });
   } catch (error) {
     console.error("Assign technician error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * @route POST /:id/assign
+ * @description Assign a technician to a request
+ * @access Private
+ * @param {string} req.params.id - The ID of the request
+ * @param {Object} req.body - The request body
+ * @param {number} req.body.idTechnician - The ID of the technician to assign
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
+router.post("/:id/assignDateTime", authenticateRole(2, 3), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, time } = req.body;
+    const result = await requestFunctions.assignTentativeDateTime(id, date, time);
+
+    res.json({ message: result.message });
+  } catch (error) {
+    console.error("Assign DateTime error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * @route POST /:id/ticketAndReport
+ * @description Assign a technician to a request
+ * @access Private
+ * @param {string} req.params.id - The ID of the request
+ * @param {Object} req.body - The request body
+ * @param {File} req.body.ticket - The ticket to be saved.
+ * @param {File} req.body.report - The ticket to be saved. 
+* @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
+router.post("/:id/ticketAndReport", authenticateRole(1,2,3,4), upload.fields([{ name: 'ticket', maxCount: 1 }, { name: 'report', maxCount: 1 }]), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ticket, report } = req.files;
+
+    let ticketPath = null;
+    let reportPath = null;
+
+    // Check if a ticket file is provided
+    if (ticket) {
+      // Get the existing ticket path
+      let existingTicketPath = await requestFunctions.getTicketPathOfRequest(id);
+      existingTicketPath = existingTicketPath.ticketFilePath
+      // Delete the existing ticket file if it exists
+      if (existingTicketPath) {
+        await fs.unlink(existingTicketPath);
+      }
+      
+      ticketPath = ticket[0].path;
+
+    }
+
+    // Check if a report file is provided
+    if (report) {
+      // Get the existing report path
+      let existingReportPath = await requestFunctions.getReportPathOfRequest(id);
+      existingReportPath = existingReportPath.reportFilePath
+      
+      // Delete the existing report file if it exists
+      if (existingReportPath) {
+        await fs.unlink(existingReportPath);
+      }
+      
+      reportPath = report[0].path;
+      console.log("reportPath: ", reportPath);
+    }
+
+    const result = await requestFunctions.assignTicketAndReportPathToRequest(id, ticketPath, reportPath);
+    res.json({ message: result.message });
+  } catch (error) {
+    console.error("Assign TicketAndReport error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * @route GET /:id/report
+ * @description Get the report of a request.
+ * @access Private
+ * @param {string} req.params.id - The ID of the request
+ * @param {Object} req.body - The request body
+* @returns {Object}
+ * @returns {File} message - A message indicating the result of the operation
+ */
+router.get("/:id/report", authenticateRole(1,2,3,5), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await requestFunctions.getReportPathOfRequest(id);
+    if (result) {
+      res.download(result.reportFilePath);
+    } else {
+      res.status(404).json({ message: "Error: Reporte no encontrado" });
+    }
+  } catch (error) {
+    console.error("Get report error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * @route GET /:id/ticket
+ * @description Get the ticket of a request.
+ * @access Private
+ * @param {string} req.params.id - The ID of the request
+ * @param {Object} req.body - The request body
+* @returns {Object}
+ * @returns {File} message - A message indicating the result of the operation
+ */
+router.get("/:id/ticket", authenticateRole(1,2,3,5), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await requestFunctions.getTicketPathOfRequest(id);
+    if (result) {
+      res.download(result.ticketFilePath);
+    } else {
+      res.status(404).json({ message: "Error: Boleta no encontrada" });
+    }
+  } catch (error) {
+    console.error("Get ticket error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+/**
+ * @route POST /:id/close
+ * @description Close a request.
+ * @access Private
+ * @param {string} req.params.id - The ID of the request
+ * @returns {Object}
+ * @returns {string} message - A message indicating the result of the operation
+ */
+router.post("/:id/close", authenticateRole(1,2), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await requestFunctions.close(id);
+
+    res.json({ message: result.message });
+  } catch (error) {
+    console.error("Close request error:", error);
+    res.status(500).json({ message: error.message });
   }
 });
 

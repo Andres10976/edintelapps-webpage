@@ -1,3 +1,6 @@
+const { v4: uuidv4 } = require('uuid');
+const path = require('node:path'); 
+
 function generateRandomPassword(length, includeUppercase, includeLowercase, includeNumbers, includeSymbols) {
     const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
@@ -19,6 +22,14 @@ function generateRandomPassword(length, includeUppercase, includeLowercase, incl
     return password;
   }
 
+
+  function generateUniqueFilenameWithUUID(originalFileName) {
+    const fileExtension = path.extname(originalFileName);
+    const uniqueFileName = `${uuidv4()}${fileExtension}`;
+    return uniqueFileName;
+  }
+
 module.exports = {
-    generateRandomPassword
+    generateRandomPassword,
+    generateUniqueFilenameWithUUID
 }

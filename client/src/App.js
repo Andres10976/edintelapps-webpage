@@ -1,6 +1,5 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import "@fontsource/roboto";
 import LoginPage from "./components/LoginPage";
@@ -15,9 +14,8 @@ import RequestsPage from "./components/RequestsPage";
 import ClientPage from "./components/ClientPage";
 import { Navigate } from "react-router-dom";
 import SitesPage from "./components/SitesPage";
-import TechnicianPage from "./components/TechniciansPage";
-
-const theme = createTheme();
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "./theme";
 
 function App() {
   return (
@@ -69,7 +67,7 @@ function App() {
           <Route
             path="/requests"
             element={
-              <PrivateRoute allowedRoles={[1, 2, 3]}>
+              <PrivateRoute allowedRoles={[1, 2, 3, 4, 5]}>
                 <RequestsPage />
               </PrivateRoute>
             }
@@ -77,7 +75,7 @@ function App() {
           <Route
             path="/clients"
             element={
-              <PrivateRoute allowedRoles={[1, 2, 3]}>
+              <PrivateRoute allowedRoles={[1, 2, 3, 5]}>
                 <ClientPage />
               </PrivateRoute>
             }
@@ -85,17 +83,8 @@ function App() {
           <Route
             path="/sites"
             element={
-              <PrivateRoute allowedRoles={[1, 2, 3]}>
+              <PrivateRoute allowedRoles={[1, 2, 3, 5]}>
                 <SitesPage />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/technicians"
-            element={
-              <PrivateRoute allowedRoles={[3, 4]}>
-                <TechnicianPage />
               </PrivateRoute>
             }
           />

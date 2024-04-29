@@ -10,34 +10,26 @@ import {
   DialogContent,
   DialogActions,
   Grid,
-  Card,
   CardContent,
   CardActions,
 } from "@mui/material";
-import { styled } from "@mui/system";
 import Header from "./Header";
 import axiosInstance from "../axiosInstance";
-
-const SystemsContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  minHeight: "100vh",
-}));
-
-const Main = styled(Box)(({ theme }) => ({
-  flex: 1,
-  padding: theme.spacing(4),
-}));
+import {CustomCard, CustomMain, CustomContainer} from "./styledComponents"
+import ErrorIcon from '@mui/icons-material/Error';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 function Systems() {
   const [systems, setSystems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [systemName, setSystemName] = useState("");
   const [selectedSystem, setSelectedSystem] = useState(null);
-  const [systemToDelete, setSystemToDelete] = useState(null);
-  const [createSystemOpen, setCreateSystemOpen] = useState(false);
-  const [deleteSystemConfirmationOpen, setDeleteSystemConfirmationOpen] =
-    useState(false);
+  const [systemForm, setSystemForm] = useState({ name: "" });
+  const [openSystemForm, setOpenSystemForm] = useState(false);
+  const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageDialogContent, setMessageDialogContent] = useState("");
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorDialogContent, setErrorDialogContent] = useState("");
 
   useEffect(() => {
     fetchSystems();
@@ -49,60 +41,60 @@ function Systems() {
       setSystems(response.data);
     } catch (error) {
       console.error("Error fetching systems:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los sistemas. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const createSystem = async () => {
+  const handleSystemFormSubmit = async () => {
     try {
-      await axiosInstance.post("/systems", { name: systemName });
-      setSystemName("");
+      let response;
+      if (selectedSystem) {
+        response = await axiosInstance.put(`/systems/${selectedSystem.id}`, systemForm);
+      } else {
+        response = await axiosInstance.post("/systems", systemForm);
+      }
+      setOpenSystemForm(false);
+      setSystemForm({ name: "" });
       fetchSystems();
-      setCreateSystemOpen(false);
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
     } catch (error) {
-      console.error("Error creating system:", error);
+      console.error("Error submitting system form:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al crear o actualizar un sistema. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const updateSystem = async () => {
-    try {
-      await axiosInstance.put(`/systems/${selectedSystem.id}`, {
-        name: selectedSystem.name,
-      });
-      fetchSystems();
-      setSelectedSystem(null);
-    } catch (error) {
-      console.error("Error updating system:", error);
-    }
+  const handleDeleteSystem = (system) => {
+    setSelectedSystem(system);
+    setOpenConfirmDelete(true);
   };
 
-  const deleteSystem = async () => {
+  const confirmDeleteSystem = async () => {
     try {
-      await axiosInstance.delete(`/systems/${systemToDelete.id}`);
+      const response = await axiosInstance.delete(`/systems/${selectedSystem.id}`);
       fetchSystems();
-      setSystemToDelete(null);
-      setDeleteSystemConfirmationOpen(false);
+      setOpenConfirmDelete(false);
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
     } catch (error) {
       console.error("Error deleting system:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al eliminar el sistema. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const openCreateSystem = () => {
-    setCreateSystemOpen(true);
-  };
-
-  const closeCreateSystem = () => {
-    setCreateSystemOpen(false);
-    setSystemName("");
-  };
-
-  const openDeleteSystemConfirmation = (system) => {
-    setSystemToDelete(system);
-    setDeleteSystemConfirmationOpen(true);
-  };
-
-  const closeDeleteSystemConfirmation = () => {
-    setDeleteSystemConfirmationOpen(false);
-    setSystemToDelete(null);
+  const handleEditSystem = (system) => {
+    setSelectedSystem(system);
+    setSystemForm({ name: system.name });
+    setOpenSystemForm(true);
   };
 
   const filteredSystems = systems.filter((system) =>
@@ -110,140 +102,128 @@ function Systems() {
   );
 
   return (
-    <SystemsContainer>
+    <CustomContainer>
       <Header />
-      <Main>
+      <CustomMain>
         <Typography variant="h4" component="h1" gutterBottom>
           Sistemas
         </Typography>
-
-        <Box mb={4} display="flex" alignItems="center">
-          <TextField
-            label="Buscar sistema"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            variant="outlined"
-            size="small"
-            sx={{ mr: 2 }}
-          />
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
           <Button
             variant="contained"
-            color="primary"
-            onClick={openCreateSystem}
+            onClick={() => {
+              setSelectedSystem(null);
+              setSystemForm({ name: "" });
+              setOpenSystemForm(true);
+            }}
           >
-            Crear sistema
+            Crear nuevo sistema
           </Button>
+          <TextField
+            label="Buscar"
+            variant="outlined"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </Box>
-
         <Grid container spacing={2}>
           {filteredSystems.map((system) => (
             <Grid item xs={12} sm={6} md={4} key={system.id}>
-              <Card>
+              <CustomCard>
                 <CardContent>
-                  <Typography variant="h6" component="div">
-                    {system.name}
-                  </Typography>
+                  <Typography variant="h6">{system.name}</Typography>
                 </CardContent>
                 <CardActions>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    size="small"
-                    onClick={() => setSelectedSystem(system)}
-                  >
+                  <Button size="small" onClick={() => handleEditSystem(system)}>
                     Editar
                   </Button>
                   <Button
-                    variant="outlined"
-                    color="secondary"
                     size="small"
-                    onClick={() => openDeleteSystemConfirmation(system)}
+                    color="error"
+                    onClick={() => handleDeleteSystem(system)}
                   >
                     Eliminar
                   </Button>
                 </CardActions>
-              </Card>
+              </CustomCard>
             </Grid>
           ))}
         </Grid>
-      </Main>
+      </CustomMain>
 
-      <Dialog open={createSystemOpen} onClose={closeCreateSystem}>
-        <DialogTitle>Crear sistema</DialogTitle>
+      {/* System Form Dialog */}
+      <Dialog open={openSystemForm} onClose={() => setOpenSystemForm(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {selectedSystem ? "Editar sistema" : "Crear nuevo sistema"}
+        </DialogTitle>
         <DialogContent>
-          <Box mt={2}>
-            <TextField
-              label="Nombre del sistema"
-              value={systemName}
-              onChange={(e) => setSystemName(e.target.value)}
-              variant="outlined"
-              size="small"
-              required
-              fullWidth
-            />
-          </Box>
+          <TextField
+            label="Nombre del sistema"
+            fullWidth
+            margin="normal"
+            value={systemForm.name}
+            onChange={(e) =>
+              setSystemForm({ ...systemForm, name: e.target.value })
+            }
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeCreateSystem} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={createSystem} color="primary" autoFocus>
-            Crear
+          <Button onClick={() => setOpenSystemForm(false)}>Cancelar</Button>
+          <Button onClick={handleSystemFormSubmit}>
+            {selectedSystem ? "Actualizar" : "Crear"}
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Confirm Delete Dialog */}
       <Dialog
-        open={selectedSystem !== null}
-        onClose={() => setSelectedSystem(null)}
-      >
-        <DialogTitle>Editar sistema</DialogTitle>
-        <DialogContent>
-          <Box mt={2}>
-            <TextField
-              label="Nombre del sistema"
-              value={selectedSystem?.name || ""}
-              onChange={(e) =>
-                setSelectedSystem({ ...selectedSystem, name: e.target.value })
-              }
-              variant="outlined"
-              size="small"
-              required
-              fullWidth
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedSystem(null)} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={updateSystem} color="primary" autoFocus>
-            Actualizar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={deleteSystemConfirmationOpen}
-        onClose={closeDeleteSystemConfirmation}
+        open={openConfirmDelete}
+        onClose={() => setOpenConfirmDelete(false)}
       >
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <Typography>
             ¿Estás seguro de que deseas eliminar el sistema "
-            {systemToDelete?.name}"?
+            {selectedSystem?.name}"?
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDeleteSystemConfirmation} color="primary">
-            Cancelar
-          </Button>
-          <Button onClick={deleteSystem} color="secondary" autoFocus>
+          <Button onClick={() => setOpenConfirmDelete(false)}>Cancelar</Button>
+          <Button onClick={confirmDeleteSystem} color="error">
             Eliminar
           </Button>
         </DialogActions>
       </Dialog>
-    </SystemsContainer>
+      <Dialog open={messageDialogOpen} onClose={() => setMessageDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <CheckCircleIcon color="success" sx={{ marginRight: 1 }} />
+          <Typography>Notificación</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{messageDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMessageDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={errorDialogOpen} onClose={() => setErrorDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <ErrorIcon color="error" sx={{ marginRight: 1 }} />
+          <Typography color="error">{"Error"}</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{errorDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setErrorDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+    </CustomContainer>
   );
 }
 

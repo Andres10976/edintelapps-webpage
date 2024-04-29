@@ -34,7 +34,7 @@ router.post("/", authenticateRole(2), async (req, res) => {
       contactPhone,
       contactEmail,
     } = req.body;
-    await clientFunctions.create(
+    const result = await clientFunctions.create(
       name,
       phone,
       email,
@@ -43,10 +43,10 @@ router.post("/", authenticateRole(2), async (req, res) => {
       contactPhone,
       contactEmail
     );
-    res.status(201).json({ message: "Client created successfully" });
+    res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create client error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -71,7 +71,7 @@ router.get("/", authenticateRole(2, 3), async (req, res) => {
     res.json(clients);
   } catch (error) {
     console.error("Get clients error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message});
   }
 });
 
@@ -98,11 +98,11 @@ router.get("/:id", authenticateRole(2, 3, 5), async (req, res) => {
     if (client) {
       res.json(client);
     } else {
-      res.status(404).json({ message: "Client not found" });
+      res.status(404).json({ message: "Cliente no encontrado" });
     }
   } catch (error) {
     console.error("Get client by ID error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -134,7 +134,7 @@ router.put("/:id", authenticateRole(2, 3), async (req, res) => {
       contactPhone,
       contactEmail,
     } = req.body;
-    await clientFunctions.update(
+    const result = await clientFunctions.update(
       id,
       name,
       phone,
@@ -144,10 +144,10 @@ router.put("/:id", authenticateRole(2, 3), async (req, res) => {
       contactPhone,
       contactEmail
     );
-    res.status(200).json({ message: "Client updated successfully" });
+    res.status(200).json({ message: result.message });
   } catch (error) {
     console.error("Update client error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -162,11 +162,11 @@ router.put("/:id", authenticateRole(2, 3), async (req, res) => {
 router.delete("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
-    await clientFunctions.delete(id);
-    res.status(200).json({ message: "Client deleted successfully" });
+    const result = await clientFunctions.delete(id);
+    res.status(200).json({ message: result.message });
   } catch (error) {
     console.error("Delete client error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -190,9 +190,43 @@ router.get("/:id/sites", authenticateRole(2, 3, 5), async (req, res) => {
     res.json(sites);
   } catch (error) {
     console.error("Get sites per client error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message});
   }
 });
+
+/**
+ * @route GET /:id/requests
+ * @description Get requests associated with a specific client
+ * @access Private
+ * @param {string} req.params.id - The ID of the client
+ * @returns {Object[]}
+ * @returns {number} id - The ID of the request
+ * @returns {number} idSite - The ID of the site
+ * @returns {string} siteName - The name of the site
+ * @returns {string} code - The code of the request
+ * @returns {number} idSystem - The ID of the system
+ * @returns {string} systemName - The name of the system
+ * @returns {number} idType - The ID of the request type
+ * @returns {string} requestTypeName - The name of the request type
+ * @returns {string} scope - The scope of the request
+ * @returns {number} idStatus - The ID of the request status
+ * @returns {string} statusName - The name of the request status
+ * @returns {number} idCreatedBy - The ID of the user who created the request
+ * @returns {string} createdByUsername - The username of the user who created the request
+ * @returns {string} createdAt - The date and time when the request was created
+ */
+router.get("/:id/requests", authenticateRole(2, 3, 5), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const requests = await requestFunctions.getByClient(id);
+    res.json(requests);
+  } catch (error) {
+    console.error("Get requests per client error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
 
 /**
  * @route POST /:id/sites
@@ -209,11 +243,11 @@ router.post("/:id/sites", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, supervisor } = req.body;
-    await siteFunctions.create(id, name, supervisor);
-    res.status(201).json({ message: "Site created successfully" });
+    const result = await siteFunctions.create(id, name, supervisor);
+    res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create site error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -234,11 +268,11 @@ router.put("/:id/sites/:idSite", authenticateRole(2), async (req, res) => {
   try {
     const { id, idSite } = req.params;
     const { name, supervisor, isActive } = req.body;
-    await siteFunctions.update(idSite, name, supervisor, isActive);
-    res.status(200).json({ message: "Site updated successfully" });
+    const result = await siteFunctions.update(idSite, name, supervisor, isActive);
+    res.status(200).json({ message: result.message });
   } catch (error) {
     console.error("Site update error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -266,7 +300,7 @@ router.get(
       res.json(site);
     } catch (error) {
       console.error("Get site by ID error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -291,7 +325,7 @@ router.get(
       res.json(systems);
     } catch (error) {
       console.error("Get systems per site error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -314,11 +348,11 @@ router.post(
     try {
       const { id, idSite } = req.params;
       const { idSystem } = req.body;
-      await siteFunctions.assignSystem(idSite, idSystem);
-      res.status(200).json({ message: "System assigned to site successfully" });
+      const result = await siteFunctions.assignSystem(idSite, idSystem);
+      res.status(200).json({ message: result.message });
     } catch (error) {
       console.error("Assign system to site error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -341,13 +375,13 @@ router.put(
     try {
       const { id, idSite } = req.params;
       const { idSystem } = req.body;
-      await siteFunctions.disassociateSystem(idSite, idSystem);
+      const result = await siteFunctions.disassociateSystem(idSite, idSystem);
       res
         .status(200)
-        .json({ message: "System disassociated from site successfully" });
+        .json({ message: result.message });
     } catch (error) {
       console.error("Disassociate system from site error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -384,7 +418,7 @@ router.get(
       res.status(201).json(requests);
     } catch (error) {
       console.error("Get requests by site error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -410,7 +444,7 @@ router.post(
     try {
       const { id, idSite } = req.params;
       const { code, type, scope, idSystem } = req.body;
-      await requestFunctions.create(
+      const result = await requestFunctions.create(
         idSite,
         code,
         type,
@@ -418,10 +452,10 @@ router.post(
         req.user.id,
         idSystem
       );
-      res.status(201).json({ message: "Request created successfully" });
+      res.status(201).json({ message: result.message });
     } catch (error) {
       console.error("Create request error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -465,7 +499,7 @@ router.get(
       res.status(201).json(request);
     } catch (error) {
       console.error("Get request by id error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -492,11 +526,11 @@ router.put(
     try {
       const { id, idRequest } = req.params;
       const { code, type, scope, idSystem } = req.body;
-      await requestFunctions.update(idRequest, id, code, type, scope, idSystem);
-      res.status(200).json({ message: "Request updated successfully" });
+      const result = await requestFunctions.update(idRequest, id, code, type, scope, idSystem);
+      res.status(200).json({ message: result.message });
     } catch (error) {
       console.error("Update request error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );

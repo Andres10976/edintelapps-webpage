@@ -15,9 +15,9 @@ async function createSite(idClient, name, supervisor) {
       { name: "name", value: name, type: sql.VarChar(50) },
       { name: "supervisor", value: supervisor, type: sql.Int },
     ]);
-    return "Site created successfully.";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Site creation was unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -51,7 +51,7 @@ async function getSiteById(id) {
   const site = await executeSp("sp_GetSiteById", [
     { name: "id", value: id, type: sql.Int },
   ]);
-  return site.at(0);
+  return site;
 }
 
 /**
@@ -82,15 +82,15 @@ async function getSitesPerClient(idClient) {
  */
 async function updateSite(id, name, supervisor, idClient) {
   try {
-    await executeSp("sp_UpdateSite", [
+    const result = await executeSp("sp_UpdateSite", [
       { name: "id", value: id, type: sql.Int },
       { name: "name", value: name, type: sql.VarChar(50) },
       { name: "supervisor", value: supervisor, type: sql.Int },
       { name: "idClient", value: idClient, type: sql.Int },
     ]);
-    return "Site updated successfully.";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Site updated unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -104,9 +104,9 @@ async function deleteSite(id) {
     await executeSp("sp_DeleteSite", [
       { name: "id", value: id, type: sql.Int },
     ]);
-    return "Site deleted successfully.";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Site deleted unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -122,9 +122,9 @@ async function assignSystemToSite(idSite, idSystem) {
       { name: "idSite", value: idSite, type: sql.Int },
       { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);
-    return "System assigned successfully.";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`System assigned unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -140,9 +140,9 @@ async function disassociateSiteToSystem(idSite, idSystem) {
       { name: "idSite", value: idSite, type: sql.Int },
       { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);
-    return "System disassociated successfully.";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`System disassociated unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 

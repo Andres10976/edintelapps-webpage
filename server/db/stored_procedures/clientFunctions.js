@@ -26,9 +26,9 @@ async function createClient(name, phone, email, contactName, contactLastName, co
       { name: 'contactPhone', value: contactPhone, type: sql.VarChar(20) },
       { name: 'contactEmail', value: contactEmail, type: sql.VarChar(255) }
     ]);
-    return `Client created sucessfully`;
+    return result.at(0);
   } catch (error) {
-    throw new Error(`'Client created unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -82,9 +82,9 @@ async function deleteClient(clientId) {
     const result = await executeSp('sp_DeleteClient', [
       { name: 'id', value: clientId, type: sql.Int }
     ]);
-    return 'Client deleted sucessfully';
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Client deleted unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -113,9 +113,9 @@ async function updateClient(clientId, name, phone, email, contactName, contactLa
       { name: 'contactPhone', value: contactPhone, type: sql.VarChar(20) },
       { name: 'contactEmail', value: contactEmail, type: sql.VarChar(255) }
     ]);
-    return 'Client updated sucessfully';
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Client updated unsuccessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 

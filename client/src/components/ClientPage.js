@@ -5,41 +5,20 @@ import {
   Typography,
   TextField,
   Grid,
-  Card,
   CardContent,
+  CardActions,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { styled } from "@mui/system";
 import Header from "./Header";
 import axiosInstance from "../axiosInstance";
 import { jwtDecode } from "jwt-decode";
-
-const ClientPageContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  minHeight: "100vh",
-}));
-
-const Main = styled(Box)(({ theme }) => ({
-  flex: 1,
-  padding: theme.spacing(4),
-}));
-
-const SearchBox = styled(TextField)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-}));
-
-const ClientCard = styled(Card)(({ theme }) => ({
-  cursor: "pointer",
-  transition: "background-color 0.3s",
-  "&:hover": {
-    backgroundColor: theme.palette.action.hover,
-  },
-}));
+import {CustomCard, CustomMain, CustomContainer} from "./styledComponents"
+import ErrorIcon from '@mui/icons-material/Error';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 function ClientPage() {
   const [clients, setClients] = useState([]);
@@ -48,6 +27,7 @@ function ClientPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState(false);
+  const [roleId, setRoleId] = useState(null);
   const [newClient, setNewClient] = useState({
     name: "",
     phone: "",
@@ -57,7 +37,11 @@ function ClientPage() {
     contactPhone: "",
     contactEmail: "",
   });
-  const [roleId, setRoleId] = useState(null);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageDialogContent, setMessageDialogContent] = useState("");
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorDialogContent, setErrorDialogContent] = useState("");
+  
 
   useEffect(() => {
     fetchClients();
@@ -66,10 +50,23 @@ function ClientPage() {
 
   const fetchClients = async () => {
     try {
-      const response = await axiosInstance.get("/clients");
-      setClients(response.data);
+      const token = localStorage.getItem("token");
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        if (decodedToken.roleId === 5) {
+          const response = await axiosInstance.get(`/clients/${decodedToken.clientId}`);
+          setClients([response.data]);
+        } else {
+          const response = await axiosInstance.get("/clients");
+          setClients(response.data);
+        }
+      }
     } catch (error) {
       console.error("Error fetching clients:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los clientes. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
@@ -79,10 +76,6 @@ function ClientPage() {
       const decodedToken = jwtDecode(token);
       setRoleId(decodedToken.roleId);
     }
-  };
-
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
   };
 
   const filteredClients = clients.filter((client) => {
@@ -97,35 +90,6 @@ function ClientPage() {
         contactLastName.toLowerCase().includes(lowerCaseSearchTerm))
     );
   });
-
-  const handleSelectedClientChange = (event) => {
-    const { name, value } = event.target;
-    setSelectedClient((prevClient) => ({
-      ...prevClient,
-      [name]: value,
-    }));
-  };
-
-  const handleUpdateClient = async () => {
-    try {
-      await axiosInstance.put(`/clients/${selectedClient.id}`, selectedClient);
-      fetchClients();
-      handleCloseDialog();
-    } catch (error) {
-      console.error("Error updating client:", error);
-    }
-  };
-
-  const isUpdateButtonDisabled = () => {
-    const { name, email, phone, contactEmail, contactPhone } = selectedClient;
-    return (
-      name.trim().length < 2 ||
-      (email && !isValidEmail(email)) ||
-      (phone && !isValidPhone(phone)) ||
-      (contactEmail && !isValidEmail(contactEmail)) ||
-      (contactPhone && !isValidPhone(contactPhone))
-    );
-  };
 
   const handleClientClick = (client) => {
     setSelectedClient(client);
@@ -147,6 +111,7 @@ function ClientPage() {
 
   const handleCloseCreateDialog = () => {
     setOpenCreateDialog(false);
+    setSelectedClient(null);
     setNewClient({
       name: "",
       phone: "",
@@ -168,12 +133,18 @@ function ClientPage() {
 
   const handleDeleteClient = async () => {
     try {
-      await axiosInstance.delete(`/clients/${selectedClient.id}`);
+      const response = await axiosInstance.delete(`/clients/${selectedClient.id}`);
       fetchClients();
       handleCloseDialog();
       setOpenConfirmationDialog(false);
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
     } catch (error) {
       console.error("Error deleting client:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al eliminar el cliente. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
@@ -190,11 +161,17 @@ function ClientPage() {
 
   const handleCreateSubmit = async () => {
     try {
-      await axiosInstance.post("/clients", newClient);
+      const response = await axiosInstance.post("/clients", newClient);
       fetchClients();
       handleCloseCreateDialog();
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
     } catch (error) {
       console.error("Error creating client:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al crear el cliente. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
@@ -218,9 +195,9 @@ function ClientPage() {
   };
 
   return (
-    <ClientPageContainer>
+    <CustomContainer>
       <Header />
-      <Main>
+      <CustomMain>
         <Typography variant="h4" component="h1" gutterBottom>
           Clientes
         </Typography>
@@ -230,79 +207,74 @@ function ClientPage() {
           alignItems="center"
           mb={2}
         >
-          <SearchBox
-            label="Buscar clientes"
+          {canEditClient && (
+            <>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleCreateClient}
+              >
+                Crear cliente
+              </Button>
+            </>
+          )}
+          <TextField
+            label="Buscar"
             variant="outlined"
             value={searchTerm}
-            onChange={handleSearch}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreateClient}
-          >
-            Crear cliente
-          </Button>
         </Box>
         <Grid container spacing={2}>
           {filteredClients.map((client) => (
             <Grid item xs={12} sm={6} md={4} key={client.id}>
-              <ClientCard onClick={() => handleClientClick(client)}>
+              <CustomCard>
                 <CardContent>
                   <Typography variant="h6">{client.name}</Typography>
-                  {client.email && (
-                    <Typography color="textSecondary">
-                      {client.email}
-                    </Typography>
-                  )}
-                  {client.phone && (
-                    <Typography color="textSecondary">
-                      {client.phone}
-                    </Typography>
-                  )}
+                </CardContent>
+                <CardActions>
+                  <Button size="small" onClick={() => handleClientClick(client)}>
+                    Ver detalles
+                  </Button>
                   {canEditClient && (
-                    <Box mt={1}>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleEditClient(client);
-                        }}
-                        style={{ marginRight: "1rem" }}
-                      >
+                    <>
+                      <Button size="small" onClick={() => handleEditClient(client)}>
                         Editar
                       </Button>
                       <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={(event) => {
-                          event.stopPropagation();
+                        size="small"
+                        color="error"
+                        onClick={() => {
                           setSelectedClient(client);
                           handleDeleteConfirmation();
                         }}
                       >
                         Eliminar
                       </Button>
-                    </Box>
+                    </>
                   )}
-                </CardContent>
-              </ClientCard>
+                </CardActions>
+              </CustomCard>
             </Grid>
           ))}
         </Grid>
-      </Main>
+      </CustomMain>
+      {/* Client Details Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         {selectedClient && (
           <>
             <DialogTitle>{selectedClient.name}</DialogTitle>
             <DialogContent>
-              <Typography>
-                <strong>Teléfono:</strong> {selectedClient.phone}
-              </Typography>
-              <Typography>
-                <strong>Email:</strong> {selectedClient.email}
-              </Typography>
+              {selectedClient.phone && (
+                <Typography>
+                  <strong>Teléfono:</strong> {selectedClient.phone}
+                </Typography>
+              )}
+              {selectedClient.email && (
+                <Typography>
+                  <strong>Email:</strong> {selectedClient.email}
+                </Typography>
+              )}
               {selectedClient.contactName && (
                 <Typography>
                   <strong>Nombre del contacto:</strong>{" "}
@@ -328,12 +300,11 @@ function ClientPage() {
                 </Typography>
               )}
             </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDialog}>Cerrar</Button>
-            </DialogActions>
           </>
         )}
       </Dialog>
+
+      {/* Create/Edit Client Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog}>
         <DialogTitle>
           {selectedClient ? "Editar cliente" : "Crear cliente"}
@@ -346,7 +317,9 @@ function ClientPage() {
             name="name"
             value={selectedClient ? selectedClient.name : newClient.name}
             onChange={
-              selectedClient ? handleSelectedClientChange : handleInputChange
+              selectedClient ? (e) =>
+                setSelectedClient({ ...selectedClient, name: e.target.value })
+              : handleInputChange
             }
             required
           />
@@ -357,7 +330,9 @@ function ClientPage() {
             name="phone"
             value={selectedClient ? selectedClient.phone : newClient.phone}
             onChange={
-              selectedClient ? handleSelectedClientChange : handleInputChange
+              selectedClient ? (e) =>
+                setSelectedClient({ ...selectedClient, phone: e.target.value })
+              : handleInputChange
             }
             error={
               (selectedClient
@@ -385,7 +360,9 @@ function ClientPage() {
             name="email"
             value={selectedClient ? selectedClient.email : newClient.email}
             onChange={
-              selectedClient ? handleSelectedClientChange : handleInputChange
+              selectedClient ? (e) =>
+                setSelectedClient({ ...selectedClient, email: e.target.value })
+              : handleInputChange
             }
             error={
               (selectedClient
@@ -417,7 +394,12 @@ function ClientPage() {
                 : newClient.contactName
             }
             onChange={
-              selectedClient ? handleSelectedClientChange : handleInputChange
+              selectedClient ? (e) =>
+                setSelectedClient({
+                  ...selectedClient,
+                  contactName: e.target.value,
+                })
+              : handleInputChange
             }
           />
           <TextField
@@ -431,13 +413,18 @@ function ClientPage() {
                 : newClient.contactLastName
             }
             onChange={
-              selectedClient ? handleSelectedClientChange : handleInputChange
+              selectedClient ? (e) =>
+                setSelectedClient({
+                  ...selectedClient,
+                  contactLastName: e.target.value,
+                })
+              : handleInputChange
             }
           />
           <TextField
             fullWidth
             margin="normal"
-            label="Número de teléfono del contacto"
+            label="Teléfono del contacto"
             name="contactPhone"
             value={
               selectedClient
@@ -445,7 +432,12 @@ function ClientPage() {
                 : newClient.contactPhone
             }
             onChange={
-              selectedClient ? handleSelectedClientChange : handleInputChange
+              selectedClient ? (e) =>
+                setSelectedClient({
+                  ...selectedClient,
+                  contactPhone: e.target.value,
+                })
+              : handleInputChange
             }
             error={
               (selectedClient
@@ -483,7 +475,12 @@ function ClientPage() {
                 : newClient.contactEmail
             }
             onChange={
-              selectedClient ? handleSelectedClientChange : handleInputChange
+              selectedClient ? (e) =>
+                setSelectedClient({
+                  ...selectedClient,
+                  contactEmail: e.target.value,
+                })
+              : handleInputChange
             }
             error={
               (selectedClient
@@ -515,9 +512,30 @@ function ClientPage() {
           <Button onClick={handleCloseCreateDialog}>Cancelar</Button>
           {selectedClient ? (
             <Button
-              onClick={handleUpdateClient}
+              onClick={async () => {
+                try {
+                  const response = await axiosInstance.put(
+                    `/clients/${selectedClient.id}`,
+                    selectedClient
+                  );
+                  fetchClients();
+                  handleCloseCreateDialog();
+                  setMessageDialogContent(response.data.message);
+                  setMessageDialogOpen(true);
+                } catch (error) {
+                  console.error("Error updating client:", error);
+                }
+              }}
               color="primary"
-              disabled={isUpdateButtonDisabled()}
+              disabled={
+                selectedClient.name.trim().length < 2 ||
+                (selectedClient.email && !isValidEmail(selectedClient.email)) ||
+                (selectedClient.phone && !isValidPhone(selectedClient.phone)) ||
+                (selectedClient.contactEmail &&
+                  !isValidEmail(selectedClient.contactEmail)) ||
+                (selectedClient.contactPhone &&
+                  !isValidPhone(selectedClient.contactPhone))
+              }
             >
               Actualizar cliente
             </Button>
@@ -532,11 +550,14 @@ function ClientPage() {
           )}
         </DialogActions>
       </Dialog>
+
+      {/* Confirm Delete Dialog */}
       <Dialog
         open={openConfirmationDialog}
         onClose={() => setOpenConfirmationDialog(false)}
       >
-        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogTitle>
+        Confirmar eliminación</DialogTitle>
         <DialogContent>
           <Typography>
             ¿Estás seguro que deseas eliminar el cliente "{selectedClient?.name}
@@ -547,12 +568,36 @@ function ClientPage() {
           <Button onClick={() => setOpenConfirmationDialog(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleDeleteClient} color="secondary">
+          <Button onClick={handleDeleteClient} color="error">
             Eliminar
           </Button>
         </DialogActions>
       </Dialog>
-    </ClientPageContainer>
+      <Dialog open={messageDialogOpen} onClose={() => setMessageDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <CheckCircleIcon color="success" sx={{ marginRight: 1 }} />
+          <Typography>Notificación</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{messageDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMessageDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={errorDialogOpen} onClose={() => setErrorDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <ErrorIcon color="error" sx={{ marginRight: 1 }} />
+          <Typography color="error">{"Error"}</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{errorDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setErrorDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+    </CustomContainer>
   );
 }
 

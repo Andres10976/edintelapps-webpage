@@ -60,7 +60,8 @@ const Header = () => {
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const token = localStorage.getItem("token");
   const decodedToken = jwtDecode(token);
-  const roleId = decodedToken ? decodedToken.roleId : null;
+  const roleId = decodedToken ? decodedToken.roleId : undefined;
+  const siteId = decodedToken ? decodedToken.siteId : undefined;
 
   const handleUserMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -92,32 +93,34 @@ const Header = () => {
     const menuItems = [
       {
         label: "Inicio",
-        visible:
-          roleId === 1 ||
-          roleId === 2 ||
-          roleId === 3 ||
-          roleId === 4 ||
-          roleId === 5,
+        visible: roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4 || roleId === 5,
         route: "/home",
       },
       {
         label: "Clientes",
-        visible: roleId === 1 || roleId === 2,
+        visible: roleId === 1 || roleId === 2 || roleId === 3,
         route: "/clients",
       },
-      { label: "Sitios", visible: roleId === 1, route: "/sites" },
+      {
+        label: "Sitios",
+        visible: (roleId === 1 || roleId === 2 || roleId === 3) || (roleId === 5 && siteId === undefined),
+        route: "/sites"
+      },
       {
         label: "Solicitudes",
-        visible: roleId === 1 || roleId === 2,
+        visible: roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4 || roleId === 5,
         route: "/requests",
       },
-      { label: "Sistemas", visible: roleId === 1, route: "/systems" },
       {
-        label: "Solicitudes",
-        visible: roleId === 3 || roleId === 4,
-        route: "/technician",
+        label: "Sistemas",
+        visible: roleId === 1 || roleId === 2 || roleId === 3,
+        route: "/systems"
       },
-      { label: "Usuarios", visible: roleId === 1, route: "/users" },
+      {
+        label: "Usuarios",
+        visible: roleId === 1 || roleId === 2,
+        route: "/users"
+      },
     ];
 
     return (
@@ -156,6 +159,8 @@ const Header = () => {
           <MenuIcon />
         </IconButton>
         {renderSideMenu()}
+        <div style={{ flexGrow: 1 }} />
+        <img src="/logo-edintel.png" alt="Edintel Logo" style={{ height: '40px' }} />
         <div style={{ flexGrow: 1 }} />
         {token && (
           <IconButton

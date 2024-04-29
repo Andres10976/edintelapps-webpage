@@ -24,9 +24,9 @@ async function createRequest(idSite, code, type, scope, createdBy, idSystem) {
       { name: "createdBy", value: createdBy, type: sql.Int },
       { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);
-    return "Request created sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error creating request: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -58,7 +58,7 @@ async function getRequestsPerClient(idClient) {
     ]);
     return result;
   } catch (error) {
-    throw new Error(`Error retrieving requests per client: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -76,7 +76,7 @@ async function getRequestPerSite(idSite) {
     ]);
     return result;
   } catch (error) {
-    throw new Error(`Error retrieving requests per site: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -114,7 +114,7 @@ async function getRequestById(idRequest) {
     ]);
     return result.at(0);
   } catch (error) {
-    throw new Error(`Error retrieving request by ID: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -132,7 +132,7 @@ async function deleteRequest(idRequest) {
     ]);
     return result.at(0);
   } catch (error) {
-    throw new Error(`Error deleting request: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -150,9 +150,7 @@ async function getRequestsByAssignedTechnician(idTechnician) {
     ]);
     return result;
   } catch (error) {
-    throw new Error(
-      `Error retrieving requests by assigned technician: ${error.message}`
-    );
+    throw new Error(error.message);
   }
 }
 
@@ -167,7 +165,7 @@ async function getRequests() {
     const result = await executeSp("sp_GetRequests");
     return result;
   } catch (error) {
-    throw new Error(`Error retrieving requests: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -192,10 +190,96 @@ async function updateRequest(id, idSite, code, type, scope, idSystem) {
       { name: "type", value: type, type: sql.SmallInt },
       { name: "scope", value: scope, type: sql.VarChar(500) },
       { name: "idSystem", value: idSystem, type: sql.SmallInt },
+
     ]);
-    return "Request updated sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error updating request: ${error.message}`);
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Updates a request.
+ * @param {number} id - The ID of the request.
+ * @param {number} idSite - The ID of the site.
+ * @param {string} code - The code of the request.
+ * @param {number} type - The type of the request.
+ * @param {string} scope - The scope of the request.
+ * @param {number} idSystem - The ID of the system.
+ * @param {number} tentativeDate - The tentative date execution of the request.
+ * @param {number} tentativeTime - The tentative time execution of the request.
+ * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
+ *   - message: A string indicating the result of the operation.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function assignTentativeDateTime(id, tentativeDate, tentativeTime) {
+  try {
+    const result = await executeSp("sp_AssignTentativeDateTime", [
+      { name: "idRequest", value: id, type: sql.BigInt },
+      { name: "tentativeDate", value: tentativeDate, type: sql.Date },
+      { name: "tentativeTime", value: tentativeTime, type: sql.VarChar(20) },
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Assign a ticket and a report to a request.
+ * @param {number} id - The ID of the request.
+ * @param {number} ticket - A ticket to be assign to the request.
+ * @param {number} report - A report to be assign to the request.
+ * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
+ *   - message: A string indicating the result of the operation.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function assignTicketAndReportPathToRequest(id, ticket = null, report = null) {
+  try {
+    const result = await executeSp("sp_AssignTicketAndReportToRequest", [
+      { name: "idRequest", value: id, type: sql.BigInt },
+      { name: "ticket", value: ticket, type: sql.VarChar(255) },
+      { name: "report", value: report, type: sql.VarChar(255) },
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Get the ticket path of a request.
+ * @param {number} id - The ID of the request.
+ * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
+ *   - message: A string indicating the result of the operation.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function getTicketPathOfRequest(id) {
+  try {
+    const result = await executeSp("sp_GetTicketFromRequest", [
+      { name: "idRequest", value: id, type: sql.BigInt },
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Get the report path of a request.
+ * @param {number} id - The ID of the request.
+ * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
+ *   - message: A string indicating the result of the operation.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function getReportPathOfRequest(id) {
+  try {
+    const result = await executeSp("sp_GetReportFromRequest", [
+      { name: "idRequest", value: id, type: sql.BigInt },
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(error.message);
   }
 }
 
@@ -214,9 +298,9 @@ async function assignTechnicianToRequest(idRequest, idTechnician) {
       { name: "idRequest", value: idRequest, type: sql.BigInt },
       { name: "idTechnician", value: idTechnician, type: sql.Int },
     ]);
-    return "Technician assigned sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error assigning technician to request: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -232,13 +316,11 @@ async function acknowledgeRequestByTechnician(idRequest, idTechnician) {
   try {
     const result = await executeSp("sp_AcknowledgeRequestByTechnician", [
       { name: "idRequest", value: idRequest, type: sql.BigInt },
-      { name: "roleidTechnicianId", value: idTechnician, type: sql.Int },
+      { name: "idTechnician", value: idTechnician, type: sql.Int },
     ]);
-    return "Technician acknowleged sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(
-      `Error acknowledging request by technician: ${error.message}`
-    );
+    throw new Error(error.message);
   }
 }
 
@@ -254,11 +336,11 @@ async function startRequestByTechnician(idRequest, idTechnician) {
   try {
     const result = await executeSp("sp_StartRequestByTechnician", [
       { name: "idRequest", value: idRequest, type: sql.BigInt },
-      { name: "roleidTechnicianId", value: idTechnician, type: sql.Int },
+      { name: "idTechnician", value: idTechnician, type: sql.Int },
     ]);
-    return "Techncian started request sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error starting request by technician: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -275,7 +357,7 @@ async function getRequestTypes() {
     const result = await executeSp("sp_GetRequestTypes");
     return result;
   } catch (error) {
-    throw new Error(`Error getting request types: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -292,7 +374,25 @@ async function getRequestStatus() {
     const result = await executeSp("sp_GetRequestStatuses");
     return result;
   } catch (error) {
-    throw new Error(`Error getting request statuses: ${error.message}`);
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Close a request.
+ * @param {number} idRequest - The ID of the request.
+ * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
+ *   - message: A string indicating the result of the operation.
+ * @throws {Error} - If an error occurs during the operation.
+ */
+async function closeRequest(idRequest) {
+  try {
+    const result = await executeSp("sp_CloseRequestById", [
+      { name: "idRequest", value: idRequest, type: sql.BigInt },
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(error.message);
   }
 }
 
@@ -310,4 +410,9 @@ module.exports = {
   delete: deleteRequest,
   getTypes: getRequestTypes,
   getStatus: getRequestStatus,
+  assignTentativeDateTime,
+  assignTicketAndReportPathToRequest,
+  getReportPathOfRequest,
+  getTicketPathOfRequest,
+  close: closeRequest
 };

@@ -7,6 +7,7 @@ import {
   Grid,
   Card,
   CardContent,
+  CardActions,
   Button,
   Dialog,
   DialogTitle,
@@ -18,8 +19,11 @@ import {
 import { styled } from "@mui/system";
 import Header from "./Header";
 import axiosInstance from "../axiosInstance";
+import { jwtDecode } from "jwt-decode";
+import ErrorIcon from '@mui/icons-material/Error';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-const SitesPageContainer = styled(Box)(({ theme }) => ({
+const SitesContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   minHeight: "100vh",
@@ -30,26 +34,18 @@ const Main = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
 }));
 
-const SearchBox = styled(TextField)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-}));
-
 const SiteCard = styled(Card)(({ theme }) => ({
-  cursor: "pointer",
-  transition: "background-color 0.3s",
-  "&:hover": {
-    backgroundColor: theme.palette.action.hover,
-  },
+  marginBottom: theme.spacing(2),
 }));
 
 function SitesPage() {
   const [sites, setSites] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedSite, setSelectedSite] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [openConfirmationDialog, setOpenConfirmationDialog] = useState(false);
-  const [newSite, setNewSite] = useState({
+  const [openSiteDialog, setOpenSiteDialog] = useState(false);
+  const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+  const [openSiteForm, setOpenSiteForm] = useState(false);
+  const [siteForm, setSiteForm] = useState({
     idClient: "",
     name: "",
     supervisor: "",
@@ -58,17 +54,47 @@ function SitesPage() {
   const [clients, setClients] = useState([]);
   const [systems, setSystems] = useState([]);
   const [selectedSystems, setSelectedSystems] = useState([]);
+  const [roleId, setRoleId] = useState(null);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageDialogContent, setMessageDialogContent] = useState("");
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorDialogContent, setErrorDialogContent] = useState("");
 
   useEffect(() => {
+    getRoleFromToken();
     fetchSites();
-    fetchSupervisors();
-    fetchClients();
-    fetchSystems();
   }, []);
+  
+  useEffect(() => {
+    if (roleId !== 5 && roleId !== null) {
+      fetchSupervisors();
+      fetchClients();
+      fetchSystems();
+    }
+  }, [roleId]);
+
+  const getRoleFromToken = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      setRoleId(decodedToken.roleId);
+    }
+  };
+
+  const canEditRequest = [1, 2, 3].includes(roleId);
 
   const fetchSites = async () => {
     try {
-      const response = await axiosInstance.get("/sites");
+      const token = localStorage.getItem("token");
+      let response;
+      if (token) {
+        const decodedToken = jwtDecode(token);
+        if (decodedToken.roleId === 5) {
+          response = await axiosInstance.get(`/clients/${decodedToken.clientId}/sites`);
+        } else {
+          response = await axiosInstance.get("/sites");
+        }
+      }
       const groupedSites = response.data.reduce((acc, site) => {
         const existingSite = acc.find((s) => s.id === site.id);
         if (existingSite) {
@@ -92,6 +118,10 @@ function SitesPage() {
       setSites(groupedSites);
     } catch (error) {
       console.error("Error fetching sites:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los sitios. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
@@ -102,6 +132,10 @@ function SitesPage() {
       setSupervisors(supervisorUsers);
     } catch (error) {
       console.error("Error fetching supervisors:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los supervisores. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
@@ -111,101 +145,10 @@ function SitesPage() {
       setClients(response.data);
     } catch (error) {
       console.error("Error fetching clients:", error);
-    }
-  };
-
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleDeleteConfirmation = () => {
-    setOpenConfirmationDialog(true);
-  };
-
-  const filteredSites = sites.filter((site) => {
-    const { name, clientName, SupervisorName } = site;
-    const lowerCaseSearchTerm = searchTerm.toLowerCase();
-    return (
-      name.toLowerCase().includes(lowerCaseSearchTerm) ||
-      (clientName && clientName.toLowerCase().includes(lowerCaseSearchTerm)) ||
-      (SupervisorName &&
-        SupervisorName.toLowerCase().includes(lowerCaseSearchTerm))
-    );
-  });
-
-  const handleSiteClick = (site) => {
-    const supervisor = supervisors.find(
-      (supervisor) => supervisor.id === site.SupervisorId
-    );
-
-    const client = clients.find((client) => client.id === site.idClient);
-    setSelectedSite({ ...site, supervisor, client });
-    setSelectedSystems(site.systems || []);
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setSelectedSite(null);
-    setOpenDialog(false);
-  };
-
-  const handleCreateSite = () => {
-    setOpenCreateDialog(true);
-  };
-
-  const handleCloseCreateDialog = () => {
-    setOpenCreateDialog(false);
-    setNewSite({
-      idClient: "",
-      name: "",
-      supervisor: "",
-    });
-  };
-
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setNewSite((prevSite) => ({
-      ...prevSite,
-      [name]: value,
-    }));
-  };
-
-  const handleSelectedSiteChange = (event) => {
-    const { name, value } = event.target;
-    setSelectedSite((prevSite) => ({
-      ...prevSite,
-      [name]: value,
-    }));
-  };
-
-  const handleDeleteSite = async () => {
-    try {
-      await axiosInstance.delete(`/sites/${selectedSite.id}`);
-      fetchSites();
-      handleCloseDialog();
-      setOpenConfirmationDialog(false);
-    } catch (error) {
-      console.error("Error deleting site:", error);
-    }
-  };
-
-  const isCreateButtonDisabled = () => {
-    const { idClient, name, supervisor } = newSite;
-    return !idClient || name.trim().length < 2 || !supervisor;
-  };
-
-  const isUpdateButtonDisabled = () => {
-    const { name, supervisor, client } = selectedSite;
-    return name.trim().length < 2 || !supervisor || !client;
-  };
-
-  const handleCreateSubmit = async () => {
-    try {
-      await axiosInstance.post("/sites", newSite);
-      fetchSites();
-      handleCloseCreateDialog();
-    } catch (error) {
-      console.error("Error creating site:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los clientes. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
@@ -215,11 +158,95 @@ function SitesPage() {
       setSystems(response.data);
     } catch (error) {
       console.error("Error fetching systems:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los sistemas. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const handleSystemChange = (event, values) => {
-    setSelectedSystems(values);
+  const handleSiteClick = (site) => {
+    setSelectedSite(site);
+    setOpenSiteDialog(true);
+  };
+
+  const handleEditSite = (site) => {
+    setSelectedSite(site);
+    setSiteForm({
+      idClient: site.idClient,
+      name: site.name,
+      supervisor: site.SupervisorId,
+    });
+    setSelectedSystems(site.systems || []);
+    setOpenSiteForm(true);
+  };
+
+  const handleDeleteSite = (site) => {
+    setSelectedSite(site);
+    setOpenConfirmDelete(true);
+  };
+
+  const confirmDeleteSite = async () => {
+    try {
+      const response = await axiosInstance.delete(`/sites/${selectedSite.id}`);
+      fetchSites();
+      setOpenConfirmDelete(false);
+      setOpenSiteDialog(false);
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
+    } catch (error) {
+      console.error("Error deleting site:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al eliminar el sitio. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
+    }
+  };
+
+  const handleSiteFormSubmit = async () => {
+    try {
+      let response;
+      if (selectedSite) {
+        response = await axiosInstance.put(`/sites/${selectedSite.id}`, {
+          name: siteForm.name,
+          idClient: siteForm.idClient,
+          supervisor: siteForm.supervisor,
+        });
+
+        // Assign selected systems to the site
+        for (const system of selectedSystems) {
+          await assignSystemToSite(system.id);
+        }
+
+        // Disassociate unselected systems from the site
+        const existingSystems = selectedSite.systems || [];
+        for (const existingSystem of existingSystems) {
+          if (
+            !selectedSystems.some((system) => system.id === existingSystem.id)
+          ) {
+            await disassociateSystemFromSite(existingSystem.id);
+          }
+        }
+      } else {
+        response = await axiosInstance.post("/sites", siteForm);
+      }
+      setOpenSiteForm(false);
+      setSiteForm({
+        idClient: "",
+        name: "",
+        supervisor: "",
+      });
+      setSelectedSystems([]);
+      fetchSites();
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
+    } catch (error) {
+      console.error("Error submitting site form:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al crear o actualizar un sitio. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
+    }
   };
 
   const assignSystemToSite = async (idSystem) => {
@@ -229,54 +256,42 @@ function SitesPage() {
       });
     } catch (error) {
       console.error("Error assigning system to site:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al asociar un sistema a un sitio. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
   const disassociateSystemFromSite = async (idSystem) => {
     try {
-      await axiosInstance.put(
-        `/sites/${selectedSite.id}/systems/disassociate`,
-        {
-          idSystem,
-        }
-      );
+      await axiosInstance.put(`/sites/${selectedSite.id}/systems/disassociate`, {
+        idSystem,
+      });
     } catch (error) {
       console.error("Error disassociating system from site:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al desasociar un sistema a un sitio. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const handleUpdateSite = async () => {
-    try {
-      await axiosInstance.put(`/sites/${selectedSite.id}`, {
-        name: selectedSite.name,
-        idClient: selectedSite.client.id,
-        supervisor: selectedSite.supervisor.id,
-      });
-
-      // Assign selected systems to the site
-      for (const system of selectedSystems) {
-        await assignSystemToSite(system.id);
-      }
-
-      // Disassociate unselected systems from the site
-      const existingSystems = selectedSite.systems || [];
-      for (const existingSystem of existingSystems) {
-        if (
-          !selectedSystems.some((system) => system.id === existingSystem.id)
-        ) {
-          await disassociateSystemFromSite(existingSystem.id);
-        }
-      }
-
-      fetchSites();
-      handleCloseDialog();
-    } catch (error) {
-      console.error("Error updating site:", error);
-    }
+  const filterSites = () => {
+    return sites.filter((site) => {
+      const { name, clientName, SupervisorName, systems } = site;
+      const lowerCaseQuery = searchQuery.toLowerCase();
+      return (
+        (name && name.toLowerCase().includes(lowerCaseQuery)) ||
+        (clientName && clientName.toLowerCase().includes(lowerCaseQuery)) ||
+        (SupervisorName && SupervisorName.toLowerCase().includes(lowerCaseQuery)) ||
+        systems.some(system => system.name && system.name.toLowerCase().includes(lowerCaseQuery))
+      );
+    });
   };
 
   return (
-    <SitesPageContainer>
+    <SitesContainer>
       <Header />
       <Main>
         <Typography variant="h4" component="h1" gutterBottom>
@@ -288,24 +303,36 @@ function SitesPage() {
           alignItems="center"
           mb={2}
         >
-          <SearchBox
-            label="Buscar sitios"
+          {canEditRequest && (
+            <>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  setSelectedSite(null);
+                  setSiteForm({
+                    idClient: "",
+                    name: "",
+                    supervisor: "",
+                  });
+                  setSelectedSystems([]);
+                  setOpenSiteForm(true);
+                }}
+              >
+                Crear nuevo sitio
+              </Button>
+            </>
+          )}
+          <TextField
+            label="Buscar"
             variant="outlined"
-            value={searchTerm}
-            onChange={handleSearch}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreateSite}
-          >
-            Crear sitio
-          </Button>
         </Box>
         <Grid container spacing={2}>
-          {filteredSites.map((site) => (
+          {filterSites().map((site) => (
             <Grid item xs={12} sm={6} md={4} key={site.id}>
-              <SiteCard onClick={() => handleSiteClick(site)}>
+              <SiteCard>
                 <CardContent>
                   <Typography variant="h6">{site.name}</Typography>
                   <Typography color="textSecondary">
@@ -319,110 +346,56 @@ function SitesPage() {
                     {site.systems.map((system) => system.name).join(", ")}
                   </Typography>
                 </CardContent>
+                <CardActions>
+                  <Button size="small" onClick={() => handleSiteClick(site)}>
+                    Ver detalles
+                  </Button>
+                  {canEditRequest && (
+                    <>
+                    <Button size="small" onClick={() => handleEditSite(site)}>
+                      Editar
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => handleDeleteSite(site)}
+                    >
+                      Eliminar
+                    </Button>
+                    </>
+                  )}
+                </CardActions>
               </SiteCard>
             </Grid>
           ))}
         </Grid>
       </Main>
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        {selectedSite && (
-          <>
-            <DialogTitle>{selectedSite.name}</DialogTitle>
-            <DialogContent>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Nombre"
-                name="name"
-                value={selectedSite.name}
-                onChange={handleSelectedSiteChange}
-                required
-              />
-              <Autocomplete
-                fullWidth
-                options={clients}
-                getOptionLabel={(client) => client.name}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Cliente"
-                    margin="normal"
-                    required
-                  />
-                )}
-                value={selectedSite.client || null}
-                onChange={(event, newValue) => {
-                  setSelectedSite((prevSite) => ({
-                    ...prevSite,
-                    client: newValue,
-                    idClient: newValue ? newValue.id : "",
-                  }));
-                }}
-              />
-              <Autocomplete
-                fullWidth
-                options={supervisors}
-                getOptionLabel={(supervisor) =>
-                  `${supervisor.name} ${supervisor.lastname}`
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Supervisor"
-                    margin="normal"
-                    required
-                  />
-                )}
-                value={selectedSite.supervisor || null}
-                onChange={(event, newValue) => {
-                  setSelectedSite((prevSite) => ({
-                    ...prevSite,
-                    supervisor: newValue,
-                    SupervisorId: newValue ? newValue.id : "",
-                  }));
-                }}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-              />
-              <Autocomplete
-                multiple
-                fullWidth
-                options={systems}
-                getOptionLabel={(system) => system.name}
-                renderInput={(params) => (
-                  <TextField {...params} label="Sistemas" margin="normal" />
-                )}
-                value={selectedSystems}
-                onChange={handleSystemChange}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      key={option.id}
-                      label={option.name}
-                      {...getTagProps({ index })}
-                    />
-                  ))
-                }
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDialog}>Cancelar</Button>
-              <Button onClick={handleDeleteConfirmation} color="secondary">
-                Eliminar
-              </Button>
-              <Button
-                onClick={handleUpdateSite}
-                color="primary"
-                disabled={isUpdateButtonDisabled()}
-              >
-                Actualizar
-              </Button>
-            </DialogActions>
-          </>
-        )}
+
+      {/* Site Details Dialog */}
+      <Dialog open={openSiteDialog} onClose={() => setOpenSiteDialog(false)}>
+        <DialogTitle>Detalles del sitio</DialogTitle>
+        <DialogContent>
+          <Typography>
+            <strong>Nombre:</strong> {selectedSite?.name}
+          </Typography>
+          <Typography>
+            <strong>Cliente:</strong> {selectedSite?.clientName}
+          </Typography>
+          <Typography>
+            <strong>Supervisor:</strong> {selectedSite?.SupervisorName}
+          </Typography>
+          <Typography>
+            <strong>Sistemas:</strong>{" "}
+            {selectedSite?.systems.map((system) => system.name).join(", ")}
+          </Typography>
+        </DialogContent>
       </Dialog>
-      <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog}>
-        <DialogTitle>Crear sitio</DialogTitle>
+
+      {/* Site Form Dialog */}
+      <Dialog open={openSiteForm} onClose={() => setOpenSiteForm(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {selectedSite ? "Editar sitio" : "Crear nuevo sitio"}
+        </DialogTitle>
         <DialogContent>
           <Autocomplete
             fullWidth
@@ -432,11 +405,11 @@ function SitesPage() {
               <TextField {...params} label="Cliente" margin="normal" required />
             )}
             value={
-              clients.find((client) => client.id === newSite.idClient) || null
+              clients.find((client) => client.id === siteForm.idClient) || null
             }
             onChange={(event, newValue) => {
-              setNewSite((prevSite) => ({
-                ...prevSite,
+              setSiteForm((prevForm) => ({
+                ...prevForm,
                 idClient: newValue ? newValue.id : "",
               }));
             }}
@@ -446,8 +419,8 @@ function SitesPage() {
             margin="normal"
             label="Nombre"
             name="name"
-            value={newSite.name}
-            onChange={handleInputChange}
+            value={siteForm.name}
+            onChange={(e) => setSiteForm({ ...siteForm, name: e.target.value })}
             required
           />
           <Autocomplete
@@ -466,47 +439,87 @@ function SitesPage() {
             )}
             value={
               supervisors.find(
-                (supervisor) => supervisor.id === newSite.supervisor
+                (supervisor) => supervisor.id === siteForm.supervisor
               ) || null
             }
             onChange={(event, newValue) => {
-              setNewSite((prevSite) => ({
-                ...prevSite,
+              setSiteForm((prevForm) => ({
+                ...prevForm,
                 supervisor: newValue ? newValue.id : "",
               }));
             }}
             isOptionEqualToValue={(option, value) => option.id === value.id}
           />
+          {selectedSite && ( // Add this condition
+            <Autocomplete
+              multiple
+              fullWidth
+              options={systems}
+              getOptionLabel={(system) => system.name}
+              renderInput={(params) => (
+                <TextField {...params} label="Sistemas" margin="normal" />
+              )}
+              value={selectedSystems}
+              onChange={(event, newValue) => setSelectedSystems(newValue)}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    key={option.id}
+                    label={option.name}
+                    {...getTagProps({ index })}
+                  />
+                ))
+              }
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+            />
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseCreateDialog}>Cancelar</Button>
-          <Button
-            onClick={handleCreateSubmit}
-            color="primary"
-            disabled={isCreateButtonDisabled()}
-          >
-            Crear sitio
+          <Button onClick={() => setOpenSiteForm(false)}>Cancelar</Button>
+          <Button onClick={handleSiteFormSubmit} color="primary">
+            {selectedSite ? "Actualizar" : "Crear"}
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog
-        open={openConfirmationDialog}
-        onClose={() => setOpenConfirmationDialog(false)}
-      >
+
+      {/* Confirm Delete Dialog */}
+      <Dialog open={openConfirmDelete} onClose={() => setOpenConfirmDelete(false)}>
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <Typography>¿Estás seguro que deseas eliminar este sitio?</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenConfirmationDialog(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleDeleteSite} color="secondary">
+          <Button onClick={() => setOpenConfirmDelete(false)}>Cancelar</Button>
+          <Button onClick={confirmDeleteSite} color="error">
             Eliminar
           </Button>
         </DialogActions>
       </Dialog>
-    </SitesPageContainer>
+      <Dialog open={messageDialogOpen} onClose={() => setMessageDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <CheckCircleIcon color="success" sx={{ marginRight: 1 }} />
+          <Typography>Notificación</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{messageDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMessageDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={errorDialogOpen} onClose={() => setErrorDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <ErrorIcon color="error" sx={{ marginRight: 1 }} />
+          <Typography color="error">{"Error"}</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{errorDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setErrorDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+    </SitesContainer>
   );
 }
 

@@ -13,9 +13,9 @@ async function createSystem(name) {
     const result = await executeSp("sp_CreateSystem", [
       { name: "name", value: name, type: sql.VarChar(255) },
     ]);
-    return "System creted sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`System creted unsucessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -32,7 +32,7 @@ async function getSystems() {
     const result = await executeSp("sp_GetSystems");
     return result;
   } catch (error) {
-    throw new Error(`Get systems error: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -52,9 +52,9 @@ async function updateSystem(id, name, isActive = true) {
       { name: "name", value: name, type: sql.VarChar(255) },
       { name: "isActive", value: isActive, type: sql.Bit },
     ]);
-    return `System updated sucessfully`;
+    return result.at(0);
   } catch (error) {
-    throw new Error(`System updated unsucessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -70,9 +70,9 @@ async function deleteSystem(id) {
     const result = await executeSp("sp_DeleteSystem", [
       { name: "id", value: id, type: sql.SmallInt },
     ]);
-    return `System deleted sucessfully`;
+    return result.at(0);
   } catch (error) {
-    throw new Error(`System deleted unsucessfully: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -94,7 +94,7 @@ async function getSystemPerSite(idSite) {
     ]);
     return result;
   } catch (error) {
-    throw new Error(`Get systems per site error: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 

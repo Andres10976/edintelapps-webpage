@@ -27,8 +27,8 @@ const Main = styled(Box)(({ theme }) => ({
 }));
 
 function formatDate(dateString) {
-  const options = { year: "numeric", month: "long", day: "numeric" };
-  return new Date(dateString).toLocaleDateString(undefined, options);
+  const options = { year: "numeric", month: "long", day: "numeric", timeZone: 'America/Costa_Rica' };
+  return new Date(dateString).toLocaleDateString('es-ES', options);
 }
 
 function MyProfile() {

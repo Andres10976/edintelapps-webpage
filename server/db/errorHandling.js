@@ -14,16 +14,14 @@ class CustomError extends Error {
   class DatabaseError extends CustomError {
     constructor(message, cause) {
       super(message);
-      this.cause = cause;
     }
   }
   
   async function handleError(error, maxRetries = 3, retryAttempt = 0) {
-    console.error('Database error:', error);
   
     if (shouldRetry(error) && retryAttempt < maxRetries) {
+      console.error('Database error:', error);
       const backoffDelay = Math.pow(2, retryAttempt) * 1000 + Math.random() * 500;
-      console.log(`Retrying after ${backoffDelay}ms (attempt ${retryAttempt + 1})`);
       await new Promise(resolve => setTimeout(resolve, backoffDelay));
       return true;
     } else {

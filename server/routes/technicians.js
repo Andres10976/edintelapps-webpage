@@ -31,7 +31,7 @@ router.get("/:id/requests", authenticateRole(4, 3), async (req, res) => {
     res.status(200).json(requests);
   } catch (error) {
     console.error("Get requests by technician error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -49,11 +49,11 @@ router.post(
   async (req, res) => {
     try {
       const { id, idRequest } = req.params;
-      await requestFunctions.acknowledgeTechnician(idRequest, req.user.id);
-      res.json({ message: "Request acknowledged successfully" });
+      const result = await requestFunctions.acknowledgeTechnician(idRequest, id);
+      res.json({ message: result.message });
     } catch (error) {
       console.error("Acknowledge request error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );
@@ -72,11 +72,11 @@ router.post(
   async (req, res) => {
     try {
       const { id, idRequest } = req.params;
-      await requestFunctions.startTechnician(idRequest, req.user.id);
-      res.json({ message: "Request started successfully" });
+      const result = await requestFunctions.startTechnician(idRequest, id);
+      res.json({ message: result.message });
     } catch (error) {
       console.error("Start request error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   }
 );

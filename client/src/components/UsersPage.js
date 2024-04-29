@@ -11,62 +11,49 @@ import {
   DialogContentText,
   TextField,
   Grid,
-  Card,
   CardContent,
+  CardActions,
   MenuItem,
+  Autocomplete,
 } from "@mui/material";
-import { styled } from "@mui/system";
 import Header from "./Header";
 import axiosInstance from "../axiosInstance";
-
-const UsersContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  minHeight: "100vh",
-}));
-
-const Main = styled(Box)(({ theme }) => ({
-  flex: 1,
-  padding: theme.spacing(4),
-}));
-
-const UserCard = styled(Card)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  cursor: "pointer",
-}));
+import { CustomCard, CustomMain, CustomContainer } from "./styledComponents";
+import ErrorIcon from '@mui/icons-material/Error';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 function UsersPage() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [clients, setClients] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [openUserDialog, setOpenUserDialog] = useState(false);
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
-  const [openUpdateDialog, setOpenUpdateDialog] = useState(false);
-  const [newUser, setNewUser] = useState({
+  const [openUserForm, setOpenUserForm] = useState(false);
+  const [userForm, setUserForm] = useState({
     username: "",
     password: "",
     email: "",
     name: "",
     lastname: "",
     roleId: "",
-    phone: "",
-  });
-  const [updateUser, setUpdateUser] = useState({
-    username: "",
-    email: "",
-    name: "",
-    lastname: "",
-    roleId: "",
-    phone: "",
+    phone: null,
+    clientId: null,
+    siteId: null,
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageDialogContent, setMessageDialogContent] = useState("");
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorDialogContent, setErrorDialogContent] = useState("");
 
   useEffect(() => {
     fetchUsers();
     fetchRoles();
+    fetchSites();
   }, []);
 
-  const [newUserTouched, setNewUserTouched] = useState({
+  const [userFormTouched, setUserFormTouched] = useState({
     username: false,
     password: false,
     email: false,
@@ -79,73 +66,118 @@ function UsersPage() {
       setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los clientes. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
+    }
+  };
+
+  const fetchSites = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      let response;
+      if (token) {
+        response = await axiosInstance.get("/sites");
+      }
+      const clientsData = response.data.reduce((acc, site) => {
+        const existingClient = acc.find(
+          (client) => client.id === site.idClient
+        );
+        if (existingClient) {
+          const existingSite = existingClient.sites.find(
+            (s) => s.id === site.id
+          );
+          if (existingSite) {
+            existingSite.systems.push({
+              id: site.idSystem,
+              name: site.systemName,
+            });
+          } else {
+            existingClient.sites.push({
+              id: site.id,
+              name: site.name,
+              systems: [{ id: site.idSystem, name: site.systemName }],
+            });
+          }
+        } else {
+          acc.push({
+            id: site.idClient,
+            name: site.clientName,
+            sites: [
+              {
+                id: site.id,
+                name: site.name,
+                systems: [{ id: site.idSystem, name: site.systemName }],
+              },
+            ],
+          });
+        }
+        return acc;
+      }, []);
+      setClients(clientsData);
+    } catch (error) {
+      console.error("Error fetching sites:", error);
     }
   };
 
   function formatDate(dateString) {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    const options = { year: "numeric", month: "long", day: "numeric", timeZone: 'America/Costa_Rica' };
+    return new Date(dateString).toLocaleDateString("es-ES", options);
   }
 
   const confirmDeleteUser = async () => {
     try {
-      await axiosInstance.delete(`/users/${selectedUser.id}`);
+      const response = await axiosInstance.delete(`/users/${selectedUser.id}`);
       fetchUsers();
       setOpenConfirmDelete(false);
-      setOpenUpdateDialog(false);
+      setOpenUserDialog(false);
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
     } catch (error) {
       console.error("Error deleting user:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al eliminar el usuario. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const isCreateButtonDisabled = () => {
-    const { username, password, email, name, lastname, roleId, phone } =
-      newUser;
-    return (
-      !username ||
-      !password ||
-      !email ||
-      !name ||
-      !lastname ||
-      !roleId ||
-      !phone ||
-      !isValidEmail(email) ||
-      !isValidPhone(phone) ||
-      !isValidUsername(username) ||
-      !isValidPassword(password)
-    );
-  };
-
-  const isUpdateButtonDisabled = () => {
-    const { username, email, name, lastname, roleId, phone } = updateUser;
+  const isUserFormButtonDisabled = () => {
+    const { username, password, email, name, lastname, roleId, phone } = userForm;
+  
     return (
       !username ||
       !email ||
       !name ||
       !lastname ||
       !roleId ||
-      !phone ||
-      !isValidEmail(email) ||
-      !isValidPhone(phone) ||
-      !isValidUsername(username)
+      (phone && !isValidPhone(phone)) ||
+      (email && !isValidEmail(email)) ||
+      (username && !isValidUsername(username)) ||
+      (password && !isValidPassword(password))
     );
   };
 
   const isValidEmail = (email) => {
+    if (!email) return true;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   const isValidPhone = (phone) => {
+    if (!phone) return true;
     const phoneRegex = /^\d{8}$/;
     return phoneRegex.test(phone);
   };
 
   const isValidUsername = (username) => {
+    if (!username) return true;
     return username.length >= 8;
   };
 
   const isValidPassword = (password) => {
+    if (!password) return true;
     const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/;
     return passwordRegex.test(password);
   };
@@ -156,14 +188,23 @@ function UsersPage() {
       setRoles(response.data);
     } catch (error) {
       console.error("Error fetching roles:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener los roles. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const handleCreateUser = async () => {
+  const handleUserFormSubmit = async () => {
     try {
-      await axiosInstance.post("/users", newUser);
-      setOpenCreateDialog(false);
-      setNewUser({
+      let response;
+      if (selectedUser) {
+        response = await axiosInstance.put(`/users/${selectedUser.id}`, userForm);
+      } else {
+        response = await axiosInstance.post("/users", userForm);
+      }
+      setOpenUserForm(false);
+      setUserForm({
         username: "",
         password: "",
         email: "",
@@ -171,32 +212,23 @@ function UsersPage() {
         lastname: "",
         roleId: "",
         phone: "",
+        clientId: null,
+        siteId: null,
       });
       fetchUsers();
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
     } catch (error) {
-      console.error("Error creating user:", error);
+      console.error("Error submitting user form:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al obtener crear o actualizar el usuario. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
-  const handleUpdateUser = async () => {
-    try {
-      await axiosInstance.put(`/users/${selectedUser.id}`, updateUser);
-      setOpenUpdateDialog(false);
-      setUpdateUser({
-        username: "",
-        email: "",
-        name: "",
-        lastname: "",
-        roleId: "",
-        phone: "",
-      });
-      fetchUsers();
-    } catch (error) {
-      console.error("Error updating user:", error);
-    }
-  };
-
-  const handleDeleteUser = async (userId) => {
+  const handleDeleteUser = (user) => {
+    setSelectedUser(user);
     setOpenConfirmDelete(true);
   };
 
@@ -204,33 +236,62 @@ function UsersPage() {
     try {
       const actualPassword = prompt("Enter the current password:");
       const newPassword = prompt("Enter the new password:");
-      await axiosInstance.post(`/users/${userId}/reset-password`, {
+      const response = await axiosInstance.post(`/users/${userId}/reset-password`, {
         actualPassword,
         newPassword,
       });
-      alert("Password reset successful");
+      //alert("Password reset successful");
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
     } catch (error) {
       console.error("Error resetting password:", error);
-      alert("Password reset failed");
+      //alert("Password reset failed");
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al restaurar la contraseña. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
     }
   };
 
   const handleUserClick = (user) => {
     setSelectedUser(user);
-    setUpdateUser({
+    setOpenUserDialog(true);
+  };
+
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setUserForm({
       username: user.username,
+      password: "",
       email: user.email,
       name: user.name,
       lastname: user.lastname,
       roleId: user.roleId,
       phone: user.phone,
+      clientId: user.clientId,
+      siteId: user.siteId,
     });
-    setOpenUpdateDialog(true);
+    setOpenUserForm(true);
   };
 
   const getRoleName = (roleId) => {
     const role = roles.find((role) => role.id === roleId);
     return role ? role.name : "";
+  };
+
+  const getClientName = (clientId) => {
+    const client = clients.find((client) => client.id === clientId);
+    return client ? client.name : "";
+  };
+
+  const getSiteName = (clientId, siteId) => {
+    const client = clients.find((client) => client.id === clientId);
+    if (client) {
+      const site = client.sites.find((site) => site.id === siteId);
+      return site ? site.name : "";
+    }
+
+    return "";
   };
 
   const filterUsers = () => {
@@ -247,10 +308,17 @@ function UsersPage() {
     });
   };
 
+  const getSites = (clientId) => {
+    console.log(clientId, userForm.siteId);
+    const client = clients.find((client) => client.id === clientId);
+    console.log(client.sites);
+    return client ? client.sites : [];
+  };
+
   return (
-    <UsersContainer>
+    <CustomContainer>
       <Header />
-      <Main>
+      <CustomMain>
         <Typography variant="h4" component="h1" gutterBottom>
           Usuarios
         </Typography>
@@ -260,7 +328,23 @@ function UsersPage() {
           alignItems="center"
           mb={2}
         >
-          <Button variant="contained" onClick={() => setOpenCreateDialog(true)}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setSelectedUser(null);
+              setUserForm({
+                username: "",
+                password: "",
+                email: "",
+                name: "",
+                lastname: "",
+                roleId: "",
+                phone: null,
+                clientId: null,
+              });
+              setOpenUserForm(true);
+            }}
+          >
             Crear nuevo usuario
           </Button>
           <TextField
@@ -273,82 +357,146 @@ function UsersPage() {
         <Grid container spacing={2}>
           {filterUsers().map((user) => (
             <Grid item xs={12} sm={6} md={4} key={user.id}>
-              <UserCard onClick={() => handleUserClick(user)}>
+              <CustomCard>
                 <CardContent>
                   <Typography variant="h6">
                     {user.name} {user.lastname}
                   </Typography>
-                  <Typography variant="subtitle1">{user.username}</Typography>
-                  <Typography variant="subtitle2">{user.email}</Typography>
-                  <Typography variant="subtitle2">
+                  <Typography color="textSecondary">{user.username}</Typography>
+                  <Typography color="textSecondary">{user.email}</Typography>
+                  <Typography color="textSecondary">
                     {getRoleName(user.roleId)}
                   </Typography>
                 </CardContent>
-              </UserCard>
+                <CardActions>
+                  <Button size="small" onClick={() => handleUserClick(user)}>
+                    Ver detalles
+                  </Button>
+                  <Button size="small" onClick={() => handleEditUser(user)}>
+                    Editar
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => handleDeleteUser(user)}
+                  >
+                    Eliminar
+                  </Button>
+                </CardActions>
+              </CustomCard>
             </Grid>
           ))}
         </Grid>
-      </Main>
+      </CustomMain>
 
-      {/* Create User Dialog */}
-      <Dialog
-        open={openCreateDialog}
-        onClose={() => setOpenCreateDialog(false)}
-      >
-        <DialogTitle>Crear nuevo usuario</DialogTitle>
+      {/* User Details Dialog */}
+      <Dialog open={openUserDialog} onClose={() => setOpenUserDialog(false)}>
+        <DialogTitle>Detalles del usuario</DialogTitle>
+        <DialogContent>
+          <Typography>
+            <strong>Nombre de usuario:</strong> {selectedUser?.username}
+          </Typography>
+          <Typography>
+            <strong>Email:</strong> {selectedUser?.email}
+          </Typography>
+          <Typography>
+            <strong>Nombre:</strong> {selectedUser?.name}
+          </Typography>
+          <Typography>
+            <strong>Apellido:</strong> {selectedUser?.lastname}
+          </Typography>
+          {selectedUser?.phone && (
+            <Typography>
+              <strong>Teléfono:</strong> {selectedUser?.phone}
+            </Typography>
+          )}
+          <Typography>
+            <strong>Rol:</strong> {getRoleName(selectedUser?.roleId)}
+          </Typography>
+          {selectedUser?.roleId === 5 && (
+            <Typography>
+              <strong>Cliente:</strong> {getClientName(selectedUser?.clientId)}
+            </Typography>
+          )}
+          {(selectedUser?.roleId === 5 && selectedUser?.siteId) && (
+            <Typography>
+              <strong>Sitio:</strong> {getSiteName(selectedUser?.clientId, selectedUser?.siteId)}
+            </Typography>
+          )}
+          <Typography>
+            <strong>Creado en:</strong>{" "}
+            {formatDate(selectedUser?.createdAt)}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenUserDialog(false)}>Cerrar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* User Form Dialog */}
+      <Dialog open={openUserForm} onClose={() => setOpenUserForm(false)}>
+        <DialogTitle>
+          {selectedUser ? "Editar usuario" : "Crear nuevo usuario"}
+        </DialogTitle>
         <DialogContent>
           <TextField
             label="Nombre de usuario"
             fullWidth
             margin="normal"
-            value={newUser.username}
+            value={userForm.username}
             onChange={(e) =>
-              setNewUser({ ...newUser, username: e.target.value })
+              setUserForm({ ...userForm, username: e.target.value })
             }
             onBlur={() =>
-              setNewUserTouched({ ...newUserTouched, username: true })
+              setUserFormTouched({ ...userFormTouched, username: true })
             }
             error={
-              newUserTouched.username && !isValidUsername(newUser.username)
+              userFormTouched.username && !isValidUsername(userForm.username)
             }
             helperText={
-              newUserTouched.username &&
-              !isValidUsername(newUser.username) &&
+              userFormTouched.username &&
+              !isValidUsername(userForm.username) &&
               "El nombre de usuario debe tener al menos 8 caracteres"
             }
           />
-          <TextField
-            label="Contraseña"
-            type="password"
-            fullWidth
-            margin="normal"
-            value={newUser.password}
-            onChange={(e) =>
-              setNewUser({ ...newUser, password: e.target.value })
-            }
-            onBlur={() =>
-              setNewUserTouched({ ...newUserTouched, password: true })
-            }
-            error={
-              newUserTouched.password && !isValidPassword(newUser.password)
-            }
-            helperText={
-              newUserTouched.password &&
-              !isValidPassword(newUser.password) &&
-              "La contraseña debe tener al menos 8 caracteres, 1 número, 1 letra minúscula y 1 letra mayúscula"
-            }
-          />
+          {!selectedUser && (
+            <TextField
+              label="Contraseña"
+              type="password"
+              fullWidth
+              margin="normal"
+              value={userForm.password}
+              onChange={(e) =>
+                setUserForm({ ...userForm, password: e.target.value })
+              }
+              onBlur={() =>
+                setUserFormTouched({ ...userFormTouched, password: true })
+              }
+              error={
+                userFormTouched.password && !isValidPassword(userForm.password)
+              }
+              helperText={
+                userFormTouched.password &&
+                !isValidPassword(userForm.password) &&
+                "La contraseña debe tener al menos 8 caracteres, 1 número, 1 letra minúscula y 1 letra mayúscula"
+              }
+            />
+          )}
           <TextField
             label="Email"
             fullWidth
             margin="normal"
-            value={newUser.email}
-            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-            onBlur={() => setNewUserTouched({ ...newUserTouched, email: true })}
-            error={newUserTouched.email && !isValidEmail(newUser.email)}
+            value={userForm.email}
+            onChange={(e) =>
+              setUserForm({ ...userForm, email: e.target.value })
+            }
+            onBlur={() =>
+              setUserFormTouched({ ...userFormTouched, email: true })
+            }
+            error={userFormTouched.email && !isValidEmail(userForm.email)}
             helperText={
-              newUserTouched.email &&
-              !isValidEmail(newUser.email) &&
+              userFormTouched.email &&
+              !isValidEmail(userForm.email) &&
               "Email inválido"
             }
           />
@@ -356,116 +504,44 @@ function UsersPage() {
             label="Nombre"
             fullWidth
             margin="normal"
-            value={newUser.name}
-            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+            value={userForm.name}
+            onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
           />
           <TextField
             label="Apellido"
             fullWidth
             margin="normal"
-            value={newUser.lastname}
+            value={userForm.lastname}
             onChange={(e) =>
-              setNewUser({ ...newUser, lastname: e.target.value })
+              setUserForm({ ...userForm, lastname: e.target.value })
             }
           />
-          <TextField
-            select
-            label="Rol"
-            fullWidth
-            margin="normal"
-            value={newUser.roleId}
-            onChange={(e) => setNewUser({ ...newUser, roleId: e.target.value })}
-          >
-            {roles.map((role) => (
-              <MenuItem key={role.id} value={role.id}>
-                {role.name}
-              </MenuItem>
-            ))}
-          </TextField>
           <TextField
             label="Teléfono"
             fullWidth
             margin="normal"
-            value={newUser.phone}
-            onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-            onBlur={() => setNewUserTouched({ ...newUserTouched, phone: true })}
-            error={newUserTouched.phone && !isValidPhone(newUser.phone)}
+            value={userForm.phone}
+            onChange={(e) =>
+              setUserForm({ ...userForm, phone: e.target.value })
+            }
+            onBlur={() =>
+              setUserFormTouched({ ...userFormTouched, phone: true })
+            }
+            error={userFormTouched.phone && !isValidPhone(userForm.phone)}
             helperText={
-              newUserTouched.phone &&
-              !isValidPhone(newUser.phone) &&
+              userFormTouched.phone &&
+              !isValidPhone(userForm.phone) &&
               "Teléfono inválido"
             }
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenCreateDialog(false)}>Cancelar</Button>
-          <Button
-            onClick={handleCreateUser}
-            disabled={isCreateButtonDisabled()}
-          >
-            Crear usuario
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Update User Dialog */}
-      <Dialog
-        open={openUpdateDialog}
-        onClose={() => setOpenUpdateDialog(false)}
-      >
-        <DialogTitle>Update User</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Nombre de usuario"
-            fullWidth
-            margin="normal"
-            value={updateUser.username}
-            onChange={(e) =>
-              setUpdateUser({ ...updateUser, username: e.target.value })
-            }
-            error={!isValidUsername(updateUser.username)}
-            helperText={
-              !isValidUsername(updateUser.username) &&
-              "El nombre de usuario debe tener al menos 8 caracteres"
-            }
-          />
-          <TextField
-            label="Email"
-            fullWidth
-            margin="normal"
-            value={updateUser.email}
-            onChange={(e) =>
-              setUpdateUser({ ...updateUser, email: e.target.value })
-            }
-            error={!isValidEmail(updateUser.email)}
-            helperText={!isValidEmail(updateUser.email) && "Email inválido"}
-          />
-          <TextField
-            label="Nombre"
-            fullWidth
-            margin="normal"
-            value={updateUser.name}
-            onChange={(e) =>
-              setUpdateUser({ ...updateUser, name: e.target.value })
-            }
-          />
-          <TextField
-            label="Apellido"
-            fullWidth
-            margin="normal"
-            value={updateUser.lastname}
-            onChange={(e) =>
-              setUpdateUser({ ...updateUser, lastname: e.target.value })
-            }
-          />
           <TextField
             select
             label="Rol"
             fullWidth
             margin="normal"
-            value={updateUser.roleId}
+            value={userForm.roleId}
             onChange={(e) =>
-              setUpdateUser({ ...updateUser, roleId: e.target.value })
+              setUserForm({ ...userForm, roleId: e.target.value })
             }
           >
             {roles.map((role) => (
@@ -474,37 +550,71 @@ function UsersPage() {
               </MenuItem>
             ))}
           </TextField>
-          <TextField
-            label="Teléfono"
-            fullWidth
-            margin="normal"
-            value={updateUser.phone}
-            onChange={(e) =>
-              setUpdateUser({ ...updateUser, phone: e.target.value })
-            }
-            error={!isValidPhone(updateUser.phone)}
-            helperText={!isValidPhone(updateUser.phone) && "Teléfono inválido"}
-          />
-          <Typography variant="subtitle1">
-            Creado en: {formatDate(selectedUser?.createdAt)}
-          </Typography>
+          {userForm.roleId === 5 && (
+            <>
+              <Autocomplete
+                options={clients}
+                getOptionLabel={(client) => client.name}
+                renderInput={(params) => (
+                  <TextField {...params} label="Cliente" fullWidth margin="normal" />
+                )}
+                value={clients.find((client) => client.id === userForm.clientId)}
+                onChange={(event, newValue) => {
+                  setUserForm({
+                    ...userForm,
+                    clientId: newValue?.id || null,
+                    siteId: null,
+                  });
+                }}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+              />
+              {userForm.clientId && (
+                <Autocomplete
+                  options={[{ id: null, name: "Sin especificar" }, ...getSites(userForm.clientId)]}
+                  getOptionLabel={(site) => site.name}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Sitio" fullWidth margin="normal" />
+                  )}
+                  value={
+                    userForm.siteId
+                      ? getSites(userForm.clientId).find((site) => site.id === userForm.siteId) || { id: null, name: "Sin especificar" }
+                      : { id: null, name: "Sin especificar" }
+                  }
+                  onChange={(event, newValue) => {
+                    setUserForm({
+                      ...userForm,
+                      siteId: newValue?.id || null,
+                    });
+                  }}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+              )}
+            </>
+          )}
+          {selectedUser && (
+            <Typography variant="subtitle1">
+              Creado en: {formatDate(selectedUser.createdAt)}
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
+          {selectedUser && (
+            <>
+              <Button
+                onClick={() => handleResetPassword(selectedUser.id)}
+                color="primary"
+              >
+                Restablecer contraseña
+              </Button>
+            </>
+          )}
           <Button
-            onClick={() => handleDeleteUser(selectedUser.id)}
-            color="secondary"
+            onClick={handleUserFormSubmit}
+            disabled={isUserFormButtonDisabled()}
           >
-            Eliminar
+            {selectedUser ? "Actualizar" : "Crear"}
           </Button>
-          <Button onClick={() => handleResetPassword(selectedUser.id)}>
-            Restablecer contraseña
-          </Button>
-          <Button
-            onClick={handleUpdateUser}
-            disabled={isUpdateButtonDisabled()}
-          >
-            Actualizar
-          </Button>
+          <Button onClick={() => setOpenUserForm(false)}>Cancelar</Button>
         </DialogActions>
       </Dialog>
 
@@ -526,7 +636,31 @@ function UsersPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </UsersContainer>
+      <Dialog open={messageDialogOpen} onClose={() => setMessageDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <CheckCircleIcon color="success" sx={{ marginRight: 1 }} />
+          <Typography>Notificación</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{messageDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMessageDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={errorDialogOpen} onClose={() => setErrorDialogOpen(false)}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
+          <ErrorIcon color="error" sx={{ marginRight: 1 }} />
+          <Typography color="error">{"Error"}</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>{errorDialogContent}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setErrorDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+    </CustomContainer>
   );
 }
 

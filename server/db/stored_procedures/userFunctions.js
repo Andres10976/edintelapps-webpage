@@ -22,7 +22,9 @@ async function createUser(
   name,
   lastname,
   roleId,
-  phone = ""
+  phone = null,
+  clientId = null,
+  siteId = null
 ) {
   try {
     await executeSp("sp_CreateUser", [
@@ -34,10 +36,12 @@ async function createUser(
       { name: "lastname", value: lastname, type: sql.VarChar(50) },
       { name: "roleId", value: roleId, type: sql.SmallInt },
       { name: "phone", value: phone, type: sql.VarChar(20) },
+      { name: "clientId", value: clientId, type: sql.Int },
+      { name: "siteId", value: siteId, type: sql.Int },
     ]);
-    return "User created sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error creating user: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -51,7 +55,7 @@ async function getUsers() {
     const result = await executeSp("sp_GetUsers");
     return result;
   } catch (error) {
-    throw new Error(`Error retrieving users: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -65,7 +69,7 @@ async function getUserRoles() {
     const result = await executeSp("sp_GetRoles");
     return result;
   } catch (error) {
-    throw new Error(`Error retrieving user roles: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -94,7 +98,7 @@ async function getUserById(userId) {
     ]);
     return result.at(0);
   } catch (error) {
-    throw new Error(`Error retrieving user by ID: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -123,7 +127,7 @@ async function getUserByUsername(username) {
     ]);
     return result.at(0);
   } catch (error) {
-    throw new Error(`Error retrieving user by username: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -152,7 +156,7 @@ async function getUserByEmail(email) {
     ]);
     return result.at(0);
   } catch (error) {
-    throw new Error(`Error retrieving user by email: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -180,7 +184,7 @@ async function getUserByResetToken(token) {
     ]);
     return result.at(0);
   } catch (error) {
-    throw new Error(`Error retrieving user by reset token: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -193,13 +197,14 @@ async function getUserByResetToken(token) {
  * @param {string} lastname - The updated last name of the user.
  * @param {number} roleId - The updated role ID of the user.
  * @param {string} phone - The updated phone number of the user.
- * @param {boolean} isActive - Indicates whether the user is active.
+ * @param {number} clientId - If the created user is a client role, this must be entered.
+ * @param {number} siteId - If the created user is a client role, this must be entered.
  * @returns {Promise<void>} - A promise that resolves when the user is updated successfully.
  * @throws {Error} - Throws an error if the user update fails.
  */
-async function updateUser(id, username, email, name, lastname, roleId, phone) {
+async function updateUser(id, username, email, name, lastname, roleId, phone=null, clientId=null, siteId=null) {
   try {
-    await executeSp("sp_UpdateUser", [
+    const result = await executeSp("sp_UpdateUser", [
       { name: "id", value: id, type: sql.Int },
       { name: "username", value: username, type: sql.VarChar(50) },
       { name: "email", value: email, type: sql.VarChar(255) },
@@ -207,10 +212,12 @@ async function updateUser(id, username, email, name, lastname, roleId, phone) {
       { name: "lastname", value: lastname, type: sql.VarChar(50) },
       { name: "phone", value: phone, type: sql.VarChar(20) },
       { name: "roleId", value: roleId, type: sql.SmallInt },
+      { name: "clientId", value: clientId, type: sql.Int },
+      { name: "siteId", value: siteId, type: sql.Int },
     ]);
-    return "User updated sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error updating user: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -225,9 +232,9 @@ async function deactivateUser(userId) {
     await executeSp("sp_DeactivateUser", [
       { name: "userId", value: userId, type: sql.Int },
     ]);
-    return "User deactivated sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error deactivating user: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -242,9 +249,9 @@ async function reactivateUser(userId) {
     await executeSp("sp_ReactivateUser", [
       { name: "userId", value: userId, type: sql.Int },
     ]);
-    return "User reactivated sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error reactivating user: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -261,9 +268,9 @@ async function updateUserRole(userId, roleId) {
       { name: "userId", value: userId, type: sql.Int },
       { name: "roleId", value: roleId, type: sql.SmallInt },
     ]);
-    return "User role updated sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error updating user role: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -286,9 +293,9 @@ async function resetPasswordByUserId(id, newPasswordHash, salt) {
       },
       { name: "salt", value: salt, type: sql.NVarChar(100) },
     ]);
-    return "Password reset sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error resetting password: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
@@ -311,9 +318,9 @@ async function savePasswordResetToken(id, resetToken, resetTokenExpires) {
         type: sql.DateTime,
       },
     ]);
-    return "Token saved sucessfully";
+    return result.at(0);
   } catch (error) {
-    throw new Error(`Error saving password reset token: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 

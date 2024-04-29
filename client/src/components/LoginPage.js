@@ -1,9 +1,9 @@
-// LoginPage.js
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
 import { styled } from "@mui/system";
 import axiosInstance from "../axiosInstance";
+import { setAuthToken } from "../axiosInstance";
 import { jwtDecode } from "jwt-decode";
 
 const LoginContainer = styled(Box)(({ theme }) => ({
@@ -12,6 +12,10 @@ const LoginContainer = styled(Box)(({ theme }) => ({
   alignItems: "center",
   justifyContent: "center",
   height: "100vh",
+  backgroundImage: `url(home-image.png)`, // Set the background image
+  backgroundSize: "cover", // Scale the image to cover the container
+  backgroundPosition: "center", // Center the image within the container
+  backgroundRepeat: "no-repeat", // Prevent the image from repeating
   backgroundColor: theme.palette.background.default,
 }));
 
@@ -46,7 +50,7 @@ function LoginPage() {
         // Decode the token to check if it's valid
         jwtDecode(token);
         // If the token is valid, redirect to the home page
-        navigate("/home");
+        navigate("/home");  
       } catch (error) {
         // If the token is invalid, remove it from local storage
         localStorage.removeItem("token");
@@ -65,14 +69,11 @@ function LoginPage() {
 
       if (response.status === 200) {
         // Login successful, store the token in local storage
-        localStorage.setItem("token", response.data.token);
-        axiosInstance.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${response.data.token}`;
+        setAuthToken(response.data.token);
         // Wait for a short duration before navigating
         setTimeout(() => {
           navigate("/home");
-        }, 3000);
+        });
       } else {
         setError(
           "Los credenciales ingresados son inválidos. Intenta de nuevo."
