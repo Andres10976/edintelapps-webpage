@@ -1,3 +1,4 @@
+//LoginPage.js
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, TextField, Button, Typography, Alert } from "@mui/material";
@@ -35,12 +36,17 @@ const LoginButton = styled(Button)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
+const ForgotPasswordButton = styled(Button)(({ theme }) => ({
+  marginTop: theme.spacing(2),
+}));
+
 function LoginPage() {
   const navigate = useNavigate();
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const loginButtonRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -60,34 +66,33 @@ function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
     try {
       const response = await axiosInstance.post("/login", {
         usernameOrEmail,
         password,
       });
-
       if (response.status === 200) {
         // Login successful, store the token in local storage
-        setAuthToken(response.data.token);
-        // Wait for a short duration before navigating
+        const { token } = response.data;
+        setAuthToken(token);
+        setIsLoading(true); // Set isLoading to true
+  
+        // Wait for a short duration to ensure the token is set before navigating
         setTimeout(() => {
+          setIsLoading(false); // Set isLoading back to false
           navigate("/home");
-        });
+        }, 500); // Adjust the duration as needed
       } else {
-        setError(
-          "Los credenciales ingresados son inválidos. Intenta de nuevo."
-        );
+        setError("Los credenciales ingresados son inválidos. Intenta de nuevo.");
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        setError(
-          "Los credenciales ingresados son inválidos. Intenta de nuevo."
-        );
+        setError("Los credenciales ingresados son inválidos. Intenta de nuevo.");
       } else {
         console.error("An error occurred during login:", error);
         setError("Un error ocurrió. Por favor intentalo más tarde.");
       }
+      setIsLoading(false); // Set isLoading back to false in case of an error
     }
   };
 
@@ -97,47 +102,65 @@ function LoginPage() {
     }
   };
 
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
+  };
+
   return (
     <LoginContainer>
       <LoginForm>
         <Typography variant="h5" component="h1" gutterBottom>
           Inicio de sesión
         </Typography>
-        {error && (
+        {error && !isLoading && (
           <Alert severity="error" sx={{ width: "100%", marginBottom: 2 }}>
             {error}
           </Alert>
         )}
-        <TextField
-          label="Nombre de usuario o correo"
-          variant="outlined"
-          margin="normal"
-          fullWidth
-          value={usernameOrEmail}
-          onChange={(e) => setUsernameOrEmail(e.target.value)}
-          onKeyPress={handleKeyPress}
-        />
-        <TextField
-          label="Contraseña"
-          variant="outlined"
-          margin="normal"
-          fullWidth
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyPress={handleKeyPress}
-        />
-        <LoginButton
-          ref={loginButtonRef}
-          variant="contained"
-          color="primary"
-          onClick={handleLogin}
-        >
-          Iniciar sesión
-        </LoginButton>
+        {isLoading ? (
+          <Typography variant="body1" align="center">
+            Iniciando sesión...
+          </Typography>
+        ) : (
+          <>
+            <TextField
+              label="Nombre de usuario o correo"
+              variant="outlined"
+              margin="normal"
+              fullWidth
+              value={usernameOrEmail}
+              onChange={(e) => setUsernameOrEmail(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <TextField
+              label="Contraseña"
+              variant="outlined"
+              margin="normal"
+              fullWidth
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <LoginButton
+              ref={loginButtonRef}
+              variant="contained"
+              color="primary"
+              onClick={handleLogin}
+            >
+              Iniciar sesión
+            </LoginButton>
+            <ForgotPasswordButton
+              variant="text"
+              color="primary"
+              onClick={handleForgotPassword}
+            >
+              ¿Olvidaste tu contraseña?
+            </ForgotPasswordButton>
+          </>
+        )}
       </LoginForm>
     </LoginContainer>
   );
 }
-
 export default LoginPage;

@@ -284,7 +284,7 @@ async function updateUserRole(userId, roleId) {
  */
 async function resetPasswordByUserId(id, newPasswordHash, salt) {
   try {
-    await executeSp("sp_ResetPasswordById", [
+    const result = await executeSp("sp_ResetPasswordById", [
       { name: "id", value: id, type: sql.Int },
       {
         name: "newPasswordHash",
@@ -309,11 +309,11 @@ async function resetPasswordByUserId(id, newPasswordHash, salt) {
  */
 async function savePasswordResetToken(id, resetToken, resetTokenExpires) {
   try {
-    await executeSp("sp_SavePasswordResetToken", [
+    const result = await executeSp("sp_SavePasswordResetToken", [
       { name: "id", value: id, type: sql.Int },
-      { name: "resetToken", value: resetToken, type: sql.VarChar(100) },
+      { name: "token", value: resetToken, type: sql.VarChar(100) },
       {
-        name: "resetTokenExpires",
+        name: "tokenExpirationDate",
         value: resetTokenExpires,
         type: sql.DateTime,
       },
@@ -338,4 +338,5 @@ module.exports = {
   resetPassword: resetPasswordByUserId,
   savePasswordResetToken: savePasswordResetToken,
   roles: getUserRoles,
+  
 };

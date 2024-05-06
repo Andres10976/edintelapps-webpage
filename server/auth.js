@@ -1,7 +1,8 @@
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { userFunctions } = require("./db");
-const { sendEmail } = require("./utils/mailHelper");
+const sendEmail = require("./utils/mailHelper");
 require("dotenv").config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -66,7 +67,7 @@ async function register(req, res) {
     );
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    console.log("Register error:", error.message);
+    console.error("Register error:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -97,13 +98,13 @@ async function login(req, res) {
     user = Array.isArray(user) ? user.at(0) : user;
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Credenciales ingresados inválidos." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Credenciales ingresados inválidos." });
     }
     const token = jwt.sign(
       { userId: user.id, roleId: user.roleId, name: user.name, clientId: user.idClient, siteId: user.idSite },
@@ -158,7 +159,7 @@ async function forgotPassword(req, res) {
 
     // Generate a unique password reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
-    const resetTokenExpires = Date.now() + 1800000; // 1 hour from now
+    const resetTokenExpires = new Date(Date.now() + 1800000);
 
     // Save the reset token and expiration time to the user's record
     await userFunctions.savePasswordResetToken(
@@ -168,24 +169,28 @@ async function forgotPassword(req, res) {
     );
 
     // Construct the password reset link
-    const resetLink = `http://edintelapps/reset-password?token=${resetToken}`;
+    const resetLink = `http://edintelapps/reset-password-token?token=${resetToken}`;
 
     // TODO:Send the password reset email
-    `await sendMail({
-      from: 'your-email@gmail.com',
-      to: email,
-      subject: 'Password Reset',
-      html: \`
-        <p>You have requested to reset your password.</p>
-        <p>Please click the following link to reset your password:</p>
-        <a href="${resetLink}">${resetLink}</a>
-      \`,
-    });`;
+    const subject= 'Reinicio de contraseña. Página Edintel';
+    const emailBody = `
+    <html>
+      <body>
+        <p>Has solicitado reiniciar la contraseña de tu cuenta.</p>
+        <p>Por favor, dar click en el siguiente link para completar su reinicio de contraseña:</p>
+        <p><a href="${resetLink}">Haz click aquí para reiniciar tu contraseña</a></p>
+        <p></p>
+        <p>Si no has sido tu el que lo solicitó puedes ignora este mensaje.</p>
+      </body>
+    </html>
+  `;
 
-    res.json({ message: "Password reset email sent" });
+    await sendEmail(subject, emailBody, user.email);
+      
+    res.json({ message: "El link para el reinicio de contraseña ha sido enviado a su correo." });
   } catch (error) {
     console.error("Forgot password error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 }
 
@@ -194,37 +199,63 @@ async function forgotPassword(req, res) {
  * @description Reset the user's password
  * @access Public
  * @param {Object} req.body - The request body
- * @param {string} req.body.token - The password reset token
  * @param {string} req.body.newPassword - The new password
+ * @param {string} req.body.token - The token to reset the password
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
 async function resetPassword(req, res) {
   try {
     const { token, newPassword } = req.body;
-
     // Find the user with the provided reset token
     const user = await userFunctions.getByResetToken(token);
 
-    if (!user || user.resetTokenExpires < Date.now()) {
-      return res
-        .status(400)
-        .json({ message: "Invalid or expired reset token" });
+    if (!user) {
+      return res.status(400).json({
+        message: "Token inválido o expirado. Por favor intente el proceso de reiniciar la contraseña de nuevo para obtener un nuevo link.",
+      });
     }
 
-    user = Array.isArray(user) ? user.at(0) : user;
+    // If user is an array, get the first element
+    const singleUser = Array.isArray(user) ? user[0] : user;
+
+    // Convert resetTokenExpires to local time zone
+    const resetTokenExpiresLocal = new Date(singleUser.resetTokenExpires);
+    const localOffsetInMs = resetTokenExpiresLocal.getTimezoneOffset() * 60 * 1000;
+    resetTokenExpiresLocal.setTime(resetTokenExpiresLocal.getTime() + localOffsetInMs);
+
+    if (resetTokenExpiresLocal < Date.now()) {
+      return res.status(400).json({
+        message: "Token inválido o expirado. Por favor intente el proceso de reiniciar la contraseña de nuevo para obtener un nuevo link.",
+      });
+    }
 
     // Hash the new password
     const salt = await bcrypt.genSalt(10);
     const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
     // Update the user's password and clear the reset token
-    await userFunctions.resetPasswordById(user.id, newPasswordHash, null, null);
+    await userFunctions.resetPassword(
+      singleUser.id,
+      newPasswordHash,
+      salt
+    );
 
-    res.json({ message: "Password reset successful" });
+    const subject= 'Reinicio de contraseña exitoso. Página Edintel';
+    const emailBody = `
+    <html>
+      <body>
+        <p>Has cambiado exitosamente tu contraseña a tu cuenta asociada de Edintel.</p>
+        <p>En caso de no haber sido usted, comuníquese inmediatamente con Edintel.</p>
+      </body>
+    </html>
+  `;
+
+    await sendEmail(subject, emailBody, singleUser.email);
+    res.json({ message: "Contraseña restaurada con éxito" });
   } catch (error) {
     console.error("Reset password error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message });
   }
 }
 

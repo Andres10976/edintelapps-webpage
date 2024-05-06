@@ -32,7 +32,6 @@ function UsersPage() {
   const [openUserForm, setOpenUserForm] = useState(false);
   const [userForm, setUserForm] = useState({
     username: "",
-    password: "",
     email: "",
     name: "",
     lastname: "",
@@ -55,7 +54,6 @@ function UsersPage() {
 
   const [userFormTouched, setUserFormTouched] = useState({
     username: false,
-    password: false,
     email: false,
     phone: false,
   });
@@ -143,8 +141,8 @@ function UsersPage() {
     }
   };
 
-  const isUserFormButtonDisabled = () => {
-    const { username, password, email, name, lastname, roleId, phone } = userForm;
+const isUserFormButtonDisabled = () => {
+    const { username, email, name, lastname, roleId, phone } = userForm;
   
     return (
       !username ||
@@ -154,8 +152,7 @@ function UsersPage() {
       !roleId ||
       (phone && !isValidPhone(phone)) ||
       (email && !isValidEmail(email)) ||
-      (username && !isValidUsername(username)) ||
-      (password && !isValidPassword(password))
+      (username && !isValidUsername(username))
     );
   };
 
@@ -174,12 +171,6 @@ function UsersPage() {
   const isValidUsername = (username) => {
     if (!username) return true;
     return username.length >= 8;
-  };
-
-  const isValidPassword = (password) => {
-    if (!password) return true;
-    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/;
-    return passwordRegex.test(password);
   };
 
   const fetchRoles = async () => {
@@ -206,7 +197,6 @@ function UsersPage() {
       setOpenUserForm(false);
       setUserForm({
         username: "",
-        password: "",
         email: "",
         name: "",
         lastname: "",
@@ -230,27 +220,6 @@ function UsersPage() {
   const handleDeleteUser = (user) => {
     setSelectedUser(user);
     setOpenConfirmDelete(true);
-  };
-
-  const handleResetPassword = async (userId) => {
-    try {
-      const actualPassword = prompt("Enter the current password:");
-      const newPassword = prompt("Enter the new password:");
-      const response = await axiosInstance.post(`/users/${userId}/reset-password`, {
-        actualPassword,
-        newPassword,
-      });
-      //alert("Password reset successful");
-      setMessageDialogContent(response.data.message);
-      setMessageDialogOpen(true);
-    } catch (error) {
-      console.error("Error resetting password:", error);
-      //alert("Password reset failed");
-      if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al restaurar la contraseña. Por favor, intente nuevamente.");
-        setErrorDialogOpen(true);
-      }
-    }
   };
 
   const handleUserClick = (user) => {
@@ -295,17 +264,25 @@ function UsersPage() {
   };
 
   const filterUsers = () => {
-    return users.filter((user) => {
-      const { username, email, name, lastname, phone } = user;
-      const fullName = `${name} ${lastname}`;
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      return (
-        (username && username.toLowerCase().includes(lowerCaseQuery)) ||
-        (email && email.toLowerCase().includes(lowerCaseQuery)) ||
-        (fullName && fullName.toLowerCase().includes(lowerCaseQuery)) ||
-        (phone && phone.toLowerCase().includes(lowerCaseQuery))
-      );
-    });
+    return users
+      .filter((user) => {
+        const { username, email, name, lastname, phone } = user;
+        const fullName = `${name} ${lastname}`;
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        return (
+          (username && username.toLowerCase().includes(lowerCaseQuery)) ||
+          (email && email.toLowerCase().includes(lowerCaseQuery)) ||
+          (fullName && fullName.toLowerCase().includes(lowerCaseQuery)) ||
+          (phone && phone.toLowerCase().includes(lowerCaseQuery))
+        );
+      })
+      .sort((a, b) => {
+        const fullNameA = `${a.name} ${a.lastname}`.toLowerCase();
+        const fullNameB = `${b.name} ${b.lastname}`.toLowerCase();
+        if (fullNameA < fullNameB) return -1;
+        if (fullNameA > fullNameB) return 1;
+        return 0;
+      });
   };
 
   const getSites = (clientId) => {
@@ -459,29 +436,6 @@ function UsersPage() {
               "El nombre de usuario debe tener al menos 8 caracteres"
             }
           />
-          {!selectedUser && (
-            <TextField
-              label="Contraseña"
-              type="password"
-              fullWidth
-              margin="normal"
-              value={userForm.password}
-              onChange={(e) =>
-                setUserForm({ ...userForm, password: e.target.value })
-              }
-              onBlur={() =>
-                setUserFormTouched({ ...userFormTouched, password: true })
-              }
-              error={
-                userFormTouched.password && !isValidPassword(userForm.password)
-              }
-              helperText={
-                userFormTouched.password &&
-                !isValidPassword(userForm.password) &&
-                "La contraseña debe tener al menos 8 caracteres, 1 número, 1 letra minúscula y 1 letra mayúscula"
-              }
-            />
-          )}
           <TextField
             label="Email"
             fullWidth
@@ -596,18 +550,8 @@ function UsersPage() {
               Creado en: {formatDate(selectedUser.createdAt)}
             </Typography>
           )}
-        </DialogContent>
+         </DialogContent>
         <DialogActions>
-          {selectedUser && (
-            <>
-              <Button
-                onClick={() => handleResetPassword(selectedUser.id)}
-                color="primary"
-              >
-                Restablecer contraseña
-              </Button>
-            </>
-          )}
           <Button
             onClick={handleUserFormSubmit}
             disabled={isUserFormButtonDisabled()}

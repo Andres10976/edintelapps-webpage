@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { register, login, logout, resetPassword, forgotPassword, authenticateRole } = require('./auth');
 require('dotenv').config();
-const {sendEmail} = require('./utils/mailHelper')
+const sendEmail = require('./utils/mailHelper')
 const corsOptions = {
   origin: '*', // Only allow requests from your frontend
   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
@@ -38,5 +38,4 @@ app.use('/technicians', techniciansRouter);
 // Start the server
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
-  //sendEmail("andres.villalobos@edintel.com", "Prueba de correo", "Cristo Vive Costa Rica!");
 });

@@ -277,8 +277,9 @@ function SitesPage() {
     }
   };
 
-  const filterSites = () => {
-    return sites.filter((site) => {
+ const filterSites = () => {
+  return sites
+    .filter((site) => {
       const { name, clientName, SupervisorName, systems } = site;
       const lowerCaseQuery = searchQuery.toLowerCase();
       return (
@@ -287,8 +288,9 @@ function SitesPage() {
         (SupervisorName && SupervisorName.toLowerCase().includes(lowerCaseQuery)) ||
         systems.some(system => system.name && system.name.toLowerCase().includes(lowerCaseQuery))
       );
-    });
-  };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name)); // Add this line to sort the sites by name
+};
 
   return (
     <SitesContainer>

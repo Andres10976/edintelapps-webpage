@@ -12,10 +12,13 @@ import MyProfile from "./components/MyProfile";
 import UsersPage from "./components/UsersPage";
 import RequestsPage from "./components/RequestsPage";
 import ClientPage from "./components/ClientPage";
+import ResetPasswordPage from "./components/ResetPasswordPage";
 import { Navigate } from "react-router-dom";
 import SitesPage from "./components/SitesPage";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./theme";
+import ForgotPasswordPage from "./components/ForgotPasswordPage";
+import ResetPasswordTokenPage from "./components/ResetPasswordTokenPage";
 
 function App() {
   return (
@@ -24,6 +27,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password-token" element={<ResetPasswordTokenPage />} />
           <Route
             path="/"
             element={
@@ -45,6 +50,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={[1, 2, 3, 4, 5]}>
                 <MyProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 3, 4, 5]}>
+                <ResetPasswordPage />
               </PrivateRoute>
             }
           />

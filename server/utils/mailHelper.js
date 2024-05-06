@@ -1,65 +1,58 @@
 const msal = require("@azure/msal-node");
-const nodemailer = require("nodemailer");
+const graph = require('@microsoft/microsoft-graph-client');
 require("dotenv").config();
 
-const msalConfig = {
-  auth: {
-    clientId: process.env.OAUTH_CLIENT_ID,
-    authority: `https://login.microsoftonline.com/${process.env.OAUTH_TENANT_ID}`,
-    clientSecret: process.env.OAUTH_CLIENT_SECRET,
-  },
-};
+async function sendEmail(subject, body, recipient) {
 
-const cca = new msal.ConfidentialClientApplication(msalConfig);
-
-const msalClientCredentialRequest = {
-  scopes: ["https://graph.microsoft.com/.default"],
-};
-
-async function getAccessToken() {
-  try {
-    const response = await cca.acquireTokenByClientCredential(msalClientCredentialRequest);
-    
-    return response.accessToken;
-  } catch (error) {
-    console.error("Failed to acquire access token:", error);
-    throw error;
-  }
-}
-
-async function createTransporter() {
-  const accessToken = await getAccessToken();
-  const transporter = nodemailer.createTransport({
-    host: "smtp.office365.com",
-    port: 587,
-    secure: false,
+  const msalConfig = {
     auth: {
-      type: "OAuth2",
-      accessToken: accessToken,
+      clientId: process.env.OAUTH_CLIENT_ID,
+      authority: `https://login.microsoftonline.com/${process.env.OAUTH_TENANT_ID}`,
+      clientSecret: process.env.OAUTH_CLIENT_SECRET,
     },
-    tls: {
-      ciphers:'SSLv3'
+  };
+
+  const cca = new msal.ConfidentialClientApplication(msalConfig);
+
+  const msalClientCredentialRequest = {
+    scopes: ["https://graph.microsoft.com/.default"],
+  };
+
+  async function getAccessToken() {
+    try {
+      const response = await cca.acquireTokenByClientCredential(msalClientCredentialRequest);
+
+      return response.accessToken;
+    } catch (error) {
+      console.error("Failed to acquire access token:", error);
+      throw error;
     }
-  });
-  return transporter;
-}
-
-// Function to send an email
-async function sendEmail(to, subject, text) {
-  try {
-    const transporter = await createTransporter();
-
-    const mailOptions = {
-      to,
-      subject,
-      text,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`Email sent: ${info.messageId}`);
-  } catch (err) {
-    console.error("Error sending email:", err);
   }
+
+  const client = graph.Client.init({
+    authProvider: (done) => {
+      done(null, getAccessToken());
+    },
+  });
+
+  const message = {
+    subject: subject,
+    body: {
+      contentType: 'HTML',
+      content: body,
+    },
+    toRecipients: [
+      {
+        emailAddress: {
+          address: recipient,
+        },
+      },
+    ],
+  };
+
+  await client.api('/users/reportes@edintel.com/sendMail').post({
+    message: message,
+  });
 }
 
-module.exports = { sendEmail };
+module.exports = sendEmail;

@@ -24,6 +24,8 @@ import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 
 const ITEM_HEIGHT = 48;
 
@@ -194,7 +196,7 @@ function RequestPage() {
   };
 
   const filterRequests = () => {
-    return requests.filter((request) => {
+    const filteredRequests = requests.filter((request) => {
       const { code, siteName, systemName, clientName, statusName, requestTypeName } = request;
       const lowerCaseQuery = searchQuery.toLowerCase();
       return (
@@ -206,6 +208,20 @@ function RequestPage() {
         (requestTypeName && requestTypeName.toLowerCase().includes(lowerCaseQuery))
       );
     });
+
+    const statusOrder = [1, 5, 4, 2, 3, 6];
+    filteredRequests.sort((a, b) => {
+      const statusA = statusOrder.indexOf(a.idStatus);
+      const statusB = statusOrder.indexOf(b.idStatus);
+      if (statusA !== statusB) {
+        return statusA - statusB;
+      }
+      const codeA = a.code ? a.code.replace(/\s/g, '') : '';
+      const codeB = b.code ? b.code.replace(/\s/g, '') : '';
+      return codeA.localeCompare(codeB);
+    });
+
+    return filteredRequests;
   };
 
   const handleFinishRequest = (request) => {
@@ -644,16 +660,39 @@ function RequestPage() {
         <Grid container spacing={2}>
           {filterRequests().map((request) => (
             <Grid item xs={12} sm={6} md={4} key={request.id}>
-              <CustomCard>
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    component="span"
-                    style={{ fontWeight: 'bold' }}
-                    color={request.code ? 'inherit' : 'error'}
+              <CustomCard sx={{ position: 'relative' }}>
+                {request.idStatus === 6 && (
+                  <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    zIndex: 1,
+                    pointerEvents: 'none',
+                  }}
                   >
-                    {request.code || 'Código sin asignar'}
-                  </Typography>
+                  </Box>
+                )}
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <Typography
+                      variant="h6"
+                      component="span"
+                      style={{ fontWeight: 'bold' }}
+                      color={request.code ? 'inherit' : 'error'}
+                    >
+                      {request.code || 'Código sin asignar'}
+                    </Typography>
+                    {request.idStatus === 1 && (
+                      <NewReleasesIcon color="primary" sx={{ ml: 1 }} />
+                    )}
+                    {request.idStatus === 5 && (
+                      <ReportProblemIcon color="error" sx={{ ml: 1 }} />
+                    )}
+                  </Box>
                   <Typography color="textSecondary">
                     {request.clientName}
                   </Typography>

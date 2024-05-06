@@ -58,7 +58,10 @@ function ClientPage() {
           setClients([response.data]);
         } else {
           const response = await axiosInstance.get("/clients");
-          setClients(response.data);
+          const sortedClients = response.data.sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
+          setClients(sortedClients);
         }
       }
     } catch (error) {

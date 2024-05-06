@@ -2,7 +2,9 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const { authenticateRole } = require("../auth");
 const { userFunctions } = require("../db");
-
+const { generateRandomPassword } = require("../utils/randomHelper")
+const sendEmail = require("../utils/mailHelper");
+const { markAsUntransferable } = require("worker_threads");
 const router = express.Router();
 
 /**
@@ -30,12 +32,14 @@ router.get("/roles", authenticateRole(2), async (req, res) => {
  */
 router.post("/", authenticateRole(2), async (req, res) => {
   try {
-    const { username, password, email, name, lastname, roleId, phone, clientId, siteId } =
+    const { username, email, name, lastname, roleId, phone, clientId, siteId } =
       req.body;
+
+    const randomPassword = generateRandomPassword(16, true, true, true, true);
 
     // Generate salt and hash the password
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(randomPassword, salt);
 
     // Create the user with the generated passwordHash and salt
     const result = await userFunctions.create(
@@ -50,6 +54,26 @@ router.post("/", authenticateRole(2), async (req, res) => {
       clientId,
       siteId
     );
+
+    const subject = "Bienvenido a Edintel";
+    //TODO: Añadir link a la página de Edintel
+    const body = `
+    <html>
+      <body>
+        <p>Bienvenido a Edintel.</p>
+        <p></p>
+        <p>Ahora formas parte de la página web de Edintel. En la misma, podrás encontrar toda la información que necesitas saber sobre los proyectos de los que formas parte.</p>
+        <p>Aquí tienes la información relacionada a tu cuenta para poder iniciar sesión correctamente:</p>
+        <p><strong>Nombre de usuario: </strong>${username}</p>
+        <p><strong>Correo:</strong> ${email}</p>
+        <p><strong>Contraseña:</strong> ${randomPassword}</p>
+        <p>Puedes ingresar a la aplicación usando el siguiente <a href="edintelapps.com">link.</a></p>
+        <p></p>
+        <p>Muchas gracias por formar parte de la familia Edintel.</p>
+      </body>
+    </html>
+    `;
+    sendEmail(subject, body, email);
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create user error:", error);
@@ -237,9 +261,8 @@ router.post(
       const { id } = req.params;
       const { actualPassword, newPassword } = req.body;
       let user = await userFunctions.getById(id);
-      user = user.at(0);
       if (!user) {
-        return res.status(401).json({ message: "Credenciales inválidos." });
+        return res.status(401).json({ message: "Contraseña ingresada incorrecta." });
       }
 
       const isPasswordValid = await bcrypt.compare(
@@ -248,7 +271,7 @@ router.post(
       );
 
       if (!isPasswordValid) {
-        return res.status(401).json({ message: "Credenciales inválidos." });
+        return res.status(401).json({ message: "Contraseña ingresada incorrecta." });
       }
       const salt = await bcrypt.genSalt(10);
       const newPasswordHash = await bcrypt.hash(newPassword, salt);

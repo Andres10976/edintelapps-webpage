@@ -84,6 +84,10 @@ const Header = () => {
     navigate("/myprofile");
   };
 
+  const resetPassword = () => {
+    navigate("/reset-password");
+  };
+
   const handleMenuItemClick = (route) => {
     handleSideMenuToggle();
     navigate(route);
@@ -179,6 +183,7 @@ const Header = () => {
           onClose={handleUserMenuClose}
         >
           <StyledMenuItem onClick={handleMyProfile}>Mi perfil</StyledMenuItem>
+          <StyledMenuItem onClick={resetPassword}>Cambiar mi contraseña</StyledMenuItem>
           <StyledMenuItem onClick={handleLogout}>Cerrar sesión</StyledMenuItem>
         </Menu>
       </Toolbar>
