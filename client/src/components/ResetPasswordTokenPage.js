@@ -78,12 +78,16 @@ function ResetPasswordTokenPage() {
             });
             setMessageDialogContent('La contraseña se ha actualizado correctamente.');
             setMessageDialogOpen(true);
-            navigate('/home'); // Navigate to the "/home" route
         } catch (error) {
             console.error("Error resetting password:", error);
             setErrorDialogContent(error.response.data.message || 'Ocurrió un error al actualizar la contraseña.');
             setErrorDialogOpen(true);
         }
+    };
+
+    const handleMessageDialogClose = () => {
+        setMessageDialogOpen(false);
+        navigate('/login'); // Navigate to the "/login" route
     };
 
     return (
@@ -124,7 +128,7 @@ function ResetPasswordTokenPage() {
                     Restablecer contraseña
                 </SubmitButton>
             </ResetPasswordTokenForm>
-            <Dialog open={messageDialogOpen} onClose={() => setMessageDialogOpen(false)}>
+            <Dialog open={messageDialogOpen} onClose={handleMessageDialogClose}>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center' }}>
                     <CheckCircleIcon color="success" sx={{ marginRight: 1 }} />
                     <Typography>Notificación</Typography>
@@ -133,7 +137,7 @@ function ResetPasswordTokenPage() {
                     <Typography>{messageDialogContent}</Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setMessageDialogOpen(false)}>OK</Button>
+                    <Button onClick={handleMessageDialogClose}>OK</Button>
                 </DialogActions>
             </Dialog>
             <Dialog open={errorDialogOpen} onClose={() => setErrorDialogOpen(false)}>

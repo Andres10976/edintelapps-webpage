@@ -25,7 +25,10 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import PersonIcon from '@mui/icons-material/Person';
+import StartIcon from '@mui/icons-material/Start';
+import AcknowledgeIcon from '@mui/icons-material/EmojiPeople';
 
 const ITEM_HEIGHT = 48;
 
@@ -70,6 +73,10 @@ function RequestPage() {
   const [ticketFile, setTicketFile] = useState(null);
   const [reportFile, setReportFile] = useState(null);
   const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
+  const uniqueStatuses = [...new Set(requests.map(request => request.statusName))].sort();
+  const uniqueTypes = [...new Set(requests.map(request => request.requestTypeName))].sort();
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [selectedTypes, setSelectedTypes] = useState([]);
 
   useEffect(() => {
     getRoleFromToken();
@@ -200,16 +207,18 @@ function RequestPage() {
       const { code, siteName, systemName, clientName, statusName, requestTypeName } = request;
       const lowerCaseQuery = searchQuery.toLowerCase();
       return (
-        (code && code.toLowerCase().includes(lowerCaseQuery)) ||
-        (siteName && siteName.toLowerCase().includes(lowerCaseQuery)) ||
-        (systemName && systemName.toLowerCase().includes(lowerCaseQuery)) ||
-        (clientName && clientName.toLowerCase().includes(lowerCaseQuery)) ||
-        (statusName && statusName.toLowerCase().includes(lowerCaseQuery)) ||
-        (requestTypeName && requestTypeName.toLowerCase().includes(lowerCaseQuery))
+        ((code && code.toLowerCase().includes(lowerCaseQuery)) ||
+          (siteName && siteName.toLowerCase().includes(lowerCaseQuery)) ||
+          (systemName && systemName.toLowerCase().includes(lowerCaseQuery)) ||
+          (clientName && clientName.toLowerCase().includes(lowerCaseQuery)) ||
+          (statusName && statusName.toLowerCase().includes(lowerCaseQuery)) ||
+          (requestTypeName && requestTypeName.toLowerCase().includes(lowerCaseQuery))) &&
+        (selectedStatuses.length === 0 || selectedStatuses.includes(statusName)) &&
+        (selectedTypes.length === 0 || selectedTypes.includes(requestTypeName))
       );
     });
 
-    const statusOrder = [1, 5, 4, 2, 3, 6];
+    const statusOrder = [1, 5, 2, 3, 4, 6];
     filteredRequests.sort((a, b) => {
       const statusA = statusOrder.indexOf(a.idStatus);
       const statusB = statusOrder.indexOf(b.idStatus);
@@ -566,13 +575,23 @@ function RequestPage() {
       idSite: "",
       idSystem: "",
     }));
-
+  
     if (value && value.sites.length === 1) {
-      setSelectedSite(value.sites[0]);
+      const site = value.sites[0];
+      setSelectedSite(site);
       setRequestForm((prevForm) => ({
         ...prevForm,
-        idSite: value.sites[0].id,
+        idSite: site.id,
       }));
+  
+      if (site.systems.length === 1) {
+        const system = site.systems[0];
+        setSelectedSystem(system);
+        setRequestForm((prevForm) => ({
+          ...prevForm,
+          idSystem: system.id,
+        }));
+      }
     }
   };
 
@@ -584,12 +603,13 @@ function RequestPage() {
       idSite: value ? value.id : "",
       idSystem: "",
     }));
-
+  
     if (value && value.systems.length === 1) {
-      setSelectedSystem(value.systems[0]);
+      const system = value.systems[0];
+      setSelectedSystem(system);
       setRequestForm((prevForm) => ({
         ...prevForm,
-        idSystem: value.systems[0].id,
+        idSystem: system.id,
       }));
     }
   };
@@ -657,22 +677,46 @@ function RequestPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </Box>
+        <Autocomplete
+          multiple
+          options={uniqueStatuses}
+          value={selectedStatuses}
+          onChange={(event, value) => setSelectedStatuses(value)}
+          renderInput={(params) => (
+            <TextField {...params} label="Estados de solicitud" margin="normal" />
+          )}
+        />
+        <Autocomplete
+          multiple
+          options={uniqueTypes}
+          value={selectedTypes}
+          onChange={(event, value) => setSelectedTypes(value)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Type"
+              margin="normal"
+              sx={{ marginTop: 0.5, marginBotton: 0.5 }} // Add this line to reduce the top margin
+            />
+          )}
+
+        />
         <Grid container spacing={2}>
           {filterRequests().map((request) => (
             <Grid item xs={12} sm={6} md={4} key={request.id}>
               <CustomCard sx={{ position: 'relative' }}>
                 {request.idStatus === 6 && (
                   <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                    zIndex: 1,
-                    pointerEvents: 'none',
-                  }}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                      zIndex: 1,
+                      pointerEvents: 'none',
+                    }}
                   >
                   </Box>
                 )}
@@ -689,8 +733,17 @@ function RequestPage() {
                     {request.idStatus === 1 && (
                       <NewReleasesIcon color="primary" sx={{ ml: 1 }} />
                     )}
+                    {request.idStatus === 2 && (
+                      <PersonIcon color="primary" sx={{ ml: 1 }} />
+                    )}
+                    {request.idStatus === 3 && (
+                      <AcknowledgeIcon color="primary" sx={{ ml: 1 }} />
+                    )}
+                    {request.idStatus === 4 && (
+                      <StartIcon color="primary" sx={{ ml: 1 }} />
+                    )}
                     {request.idStatus === 5 && (
-                      <ReportProblemIcon color="error" sx={{ ml: 1 }} />
+                      <DoneAllIcon sx={{ ml: 1, color: '#4caf50' }} />
                     )}
                   </Box>
                   <Typography color="textSecondary">
@@ -713,7 +766,7 @@ function RequestPage() {
                   <Button size="small" onClick={() => handleRequestClick(request)}>
                     Ver detalles
                   </Button>
-                  {(canEditRequest || roleId === 4) && (
+                  {((canEditRequest || roleId === 4) || (roleId === 5 && request.idStatus === 6)) && (
                     <IconButton
                       size="small"
                       aria-label="more"
@@ -819,7 +872,7 @@ function RequestPage() {
               Finalizar Solicitud
             </MenuItem>
           )}
-          {selectedRequest && (selectedRequest.idStatus === 5 || selectedRequest.idStatus === 6) && canEditRequest && [
+          {selectedRequest && (selectedRequest.idStatus === 5 || selectedRequest.idStatus === 6) && [
             <MenuItem key="downloadTicket" onClick={() => downloadFile(`requests/${selectedRequest.id}/ticket`, 'ticket')}>
               Descargar Boleta
             </MenuItem>,

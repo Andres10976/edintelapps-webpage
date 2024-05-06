@@ -1,7 +1,8 @@
 // axiosConfig.js
 import axios from 'axios';
+
 const axiosInstance = axios.create({
-  baseURL: `http://192.168.0.80:3000`,
+  baseURL: `http://192.168.0.155:3000`,
   headers: {
     Authorization: `Bearer ${localStorage.getItem('token')}`,
   },
@@ -17,12 +18,6 @@ const setAuthToken = (token) => {
     localStorage.removeItem('token'); // Remove the token from localStorage
   }
 };
-
-// Set the initial token from localStorage
-const initialToken = localStorage.getItem('token');
-if (initialToken) {
-  setAuthToken(initialToken);
-}
 
 export default axiosInstance;
 export { setAuthToken };

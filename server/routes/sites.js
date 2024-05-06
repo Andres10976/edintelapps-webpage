@@ -89,7 +89,7 @@ router.put("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, idClient, supervisor } = req.body;
-    await siteFunctions.update(id, name, supervisor, idClient);
+    const result = await siteFunctions.update(id, name, supervisor, idClient);
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Update site error:", error);
@@ -140,7 +140,7 @@ router.delete("/:id", authenticateRole(2, 3), async (req, res) => {
  * @returns {string} requests[].createdByUsername - The username of the user who created the request
  * @returns {string} requests[].createdAt - The date and time when the request was created
  */
-router.get("/:id/requests", authenticateRole(2, 3), async (req, res) => {
+router.get("/:id/requests", authenticateRole(2, 3, 5), async (req, res) => {
   try {
     const { id } = req.params;
     const requests = await requestFunctions.getBySite(id);

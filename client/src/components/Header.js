@@ -107,7 +107,7 @@ const Header = () => {
       },
       {
         label: "Sitios",
-        visible: (roleId === 1 || roleId === 2 || roleId === 3) || (roleId === 5 && siteId === undefined),
+        visible: (roleId === 1 || roleId === 2 || roleId === 3) || (roleId === 5 && !siteId),
         route: "/sites"
       },
       {

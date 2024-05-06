@@ -27,7 +27,7 @@ async function createUser(
   siteId = null
 ) {
   try {
-    await executeSp("sp_CreateUser", [
+    const result = await executeSp("sp_CreateUser", [
       { name: "username", value: username, type: sql.VarChar(50) },
       { name: "passwordHash", value: passwordHash, type: sql.VarChar(255) },
       { name: "salt", value: salt, type: sql.NVarChar(100) },
@@ -58,6 +58,63 @@ async function getUsers() {
     throw new Error(error.message);
   }
 }
+
+/**
+ * Retrieves a list of technicians.
+ * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
+ * @throws {Error} - Throws an error if the user retrieval fails.
+ */
+async function getTechnicians() {
+  try {
+    const result = await executeSp("sp_GetTechnicians");
+    return result;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Retrieves a list of supervisors.
+ * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
+ * @throws {Error} - Throws an error if the user retrieval fails.
+ */
+async function getSupervisors() {
+  try {
+    const result = await executeSp("sp_GetSupervisors");
+    return result;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Retrieves a list of operators.
+ * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
+ * @throws {Error} - Throws an error if the user retrieval fails.
+ */
+async function getOperators() {
+  try {
+    const result = await executeSp("sp_GetOperators");
+    return result;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Retrieves a list of clients.
+ * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
+ * @throws {Error} - Throws an error if the user retrieval fails.
+ */
+async function getClients() {
+  try {
+    const result = await executeSp("sp_GetClientUsers");
+    return result;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
 
 /**
  * Retrieves a list of user roles with its id and name.
@@ -229,7 +286,7 @@ async function updateUser(id, username, email, name, lastname, roleId, phone=nul
  */
 async function deactivateUser(userId) {
   try {
-    await executeSp("sp_DeactivateUser", [
+    const result = await executeSp("sp_DeactivateUser", [
       { name: "userId", value: userId, type: sql.Int },
     ]);
     return result.at(0);
@@ -246,7 +303,7 @@ async function deactivateUser(userId) {
  */
 async function reactivateUser(userId) {
   try {
-    await executeSp("sp_ReactivateUser", [
+    const result = await executeSp("sp_ReactivateUser", [
       { name: "userId", value: userId, type: sql.Int },
     ]);
     return result.at(0);
@@ -264,7 +321,7 @@ async function reactivateUser(userId) {
  */
 async function updateUserRole(userId, roleId) {
   try {
-    await executeSp("sp_UpdateUserRole", [
+    const result = await executeSp("sp_UpdateUserRole", [
       { name: "userId", value: userId, type: sql.Int },
       { name: "roleId", value: roleId, type: sql.SmallInt },
     ]);
@@ -338,5 +395,8 @@ module.exports = {
   resetPassword: resetPasswordByUserId,
   savePasswordResetToken: savePasswordResetToken,
   roles: getUserRoles,
-  
+  getTechnicians,
+  getSupervisors,
+  getOperators,
+  getClients
 };

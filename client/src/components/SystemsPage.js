@@ -97,9 +97,11 @@ function Systems() {
     setOpenSystemForm(true);
   };
 
-  const filteredSystems = systems.filter((system) =>
+  const filteredSystems = systems
+  .filter((system) =>
     system.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
+  .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <CustomContainer>

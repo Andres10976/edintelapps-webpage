@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { register, login, logout, resetPassword, forgotPassword, authenticateRole } = require('./auth');
 require('dotenv').config();
-const sendEmail = require('./utils/mailHelper')
+const sendEmail = require('./utils/mailHelper');
+const crypto = require("crypto"); //Para pruebas de correo
 const corsOptions = {
   origin: '*', // Only allow requests from your frontend
   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
@@ -19,9 +20,9 @@ const techniciansRouter = require('./routes/technicians');
 const app = express();
 app.use(express.json());
 
-app.use(cors(corsOptions)); 
+app.use(cors(corsOptions));
 
-app.post('/register', authenticateRole(1,2), register);
+app.post('/register', authenticateRole(1, 2), register);
 app.post('/login', login);
 app.post('/logout', logout);
 app.post('/reset-password', resetPassword);

@@ -147,7 +147,7 @@ async function forgotPassword(req, res) {
     // Check if the provided input is an email or username
     if (usernameOrEmail.includes("@")) {
       // If it contains '@', assume it's an email
-      user = await userFunctions.getUserByEmail(usernameOrEmail);
+      user = await userFunctions.getByEmail(usernameOrEmail);
     } else {
       // Otherwise, assume it's a username
       user = await userFunctions.getByUsername(usernameOrEmail);
@@ -169,8 +169,7 @@ async function forgotPassword(req, res) {
     );
 
     // Construct the password reset link
-    const resetLink = `http://edintelapps/reset-password-token?token=${resetToken}`;
-
+    const resetLink = `${process.env.PAGE_URL}/reset-password-token?token=${resetToken}`;
     // TODO:Send the password reset email
     const subject= 'Reinicio de contraseña. Página Edintel';
     const emailBody = `

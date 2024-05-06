@@ -26,7 +26,7 @@ function HomePage() {
     const fetchSiteName = async () => {
       try {
         const siteRequest = await axiosInstance.get(`/sites/${decodedToken.siteId}`);
-        setSiteName(siteRequest.data.name);
+        setSiteName(siteRequest.data.at(0).name);
       } catch (error) {
         console.error("Error fetching site name:", error);
       }
@@ -35,7 +35,6 @@ function HomePage() {
     if (decodedToken.clientId) {
       fetchClientName();
     }
-
     if (decodedToken.siteId) {
       fetchSiteName();
     }

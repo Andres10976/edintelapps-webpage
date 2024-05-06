@@ -74,14 +74,13 @@ function LoginPage() {
       if (response.status === 200) {
         // Login successful, store the token in local storage
         const { token } = response.data;
-        setAuthToken(token);
         setIsLoading(true); // Set isLoading to true
-  
+        setAuthToken(token);
         // Wait for a short duration to ensure the token is set before navigating
         setTimeout(() => {
           setIsLoading(false); // Set isLoading back to false
           navigate("/home");
-        }, 500); // Adjust the duration as needed
+        }, 1000); // Adjust the duration as needed
       } else {
         setError("Los credenciales ingresados son inválidos. Intenta de nuevo.");
       }

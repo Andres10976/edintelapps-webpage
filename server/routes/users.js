@@ -4,8 +4,8 @@ const { authenticateRole } = require("../auth");
 const { userFunctions } = require("../db");
 const { generateRandomPassword } = require("../utils/randomHelper")
 const sendEmail = require("../utils/mailHelper");
-const { markAsUntransferable } = require("worker_threads");
 const router = express.Router();
+require("dotenv").config();
 
 /**
  * Retrieves a list of user roles.
@@ -57,6 +57,7 @@ router.post("/", authenticateRole(2), async (req, res) => {
 
     const subject = "Bienvenido a Edintel";
     //TODO: Añadir link a la página de Edintel
+    const url = process.env.PAGE_URL;
     const body = `
     <html>
       <body>
@@ -67,7 +68,7 @@ router.post("/", authenticateRole(2), async (req, res) => {
         <p><strong>Nombre de usuario: </strong>${username}</p>
         <p><strong>Correo:</strong> ${email}</p>
         <p><strong>Contraseña:</strong> ${randomPassword}</p>
-        <p>Puedes ingresar a la aplicación usando el siguiente <a href="edintelapps.com">link.</a></p>
+        <p>Puedes ingresar a la aplicación utilizando este <a href="${url}">link</a>.</p>
         <p></p>
         <p>Muchas gracias por formar parte de la familia Edintel.</p>
       </body>
@@ -276,7 +277,19 @@ router.post(
       const salt = await bcrypt.genSalt(10);
       const newPasswordHash = await bcrypt.hash(newPassword, salt);
       await userFunctions.resetPassword(id, newPasswordHash, salt);
-      //TODO: Envia correo a la persona
+
+      const subject= 'Reinicio de contraseña exitoso. Página Edintel';
+      const emailBody = `
+      <html>
+        <body>
+          <p>Has cambiado exitosamente tu contraseña a tu cuenta asociada de Edintel.</p>
+          <p>En caso de no haber sido usted, comuníquese inmediatamente con Edintel.</p>
+        </body>
+      </html>
+    `;
+  
+      await sendEmail(subject, emailBody, user.email);
+
       res.status(201).json({ message: "Contraseña reestablecida con éxito." });
     } catch (error) {
       console.error("Reset password error:", error);

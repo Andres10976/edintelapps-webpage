@@ -101,7 +101,7 @@ async function updateSite(id, name, supervisor, idClient) {
  */
 async function deleteSite(id) {
   try {
-    await executeSp("sp_DeleteSite", [
+    const result = await executeSp("sp_DeleteSite", [
       { name: "id", value: id, type: sql.Int },
     ]);
     return result.at(0);
@@ -118,7 +118,7 @@ async function deleteSite(id) {
  */
 async function assignSystemToSite(idSite, idSystem) {
   try {
-    await executeSp("sp_AssignSystemToSite", [
+    const result = await executeSp("sp_AssignSystemToSite", [
       { name: "idSite", value: idSite, type: sql.Int },
       { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);
@@ -136,7 +136,7 @@ async function assignSystemToSite(idSite, idSystem) {
  */
 async function disassociateSiteToSystem(idSite, idSystem) {
   try {
-    await executeSp("sp_DisassociateSiteToSystem", [
+    const result = await executeSp("sp_DisassociateSiteToSystem", [
       { name: "idSite", value: idSite, type: sql.Int },
       { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);

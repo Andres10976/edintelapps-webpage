@@ -1,11 +1,13 @@
 const express = require("express");
 const { authenticateRole } = require("../auth");
-const { requestFunctions } = require("../db");
+const { requestFunctions, userFunctions, siteFunctions, clientFunctions } = require("../db");
 const { generateUniqueFilenameWithUUID } = require("../utils/randomHelper");
 const multer = require('multer');
 const path = require('path');
 const router = express.Router();
 const fs = require('fs').promises;
+const sendEmail = require("../utils/mailHelper");
+require("dotenv").config();
 
 // Set up multer storage
 const storage = multer.diskStorage({
@@ -36,7 +38,7 @@ const upload = multer({ storage: storage });
 router.post("/", authenticateRole(2, 5), async (req, res) => {
   try {
     let { idSite, code, type, scope, idSystem } = req.body;
-    if(code === '')
+    if (code === '')
       code = null;
     const result = await requestFunctions.create(
       idSite,
@@ -46,6 +48,59 @@ router.post("/", authenticateRole(2, 5), async (req, res) => {
       req.user.id,
       idSystem
     );
+
+    const createdBy = await userFunctions.getById(req.user.id);
+    let site = await siteFunctions.getById(idSite);
+
+    const system = site.find(sys => sys.idSystem === idSystem);
+    const systemName = system.systemName;
+
+    site = site.at(0);
+    const operators = await userFunctions.getOperators();
+
+    const subject = "Nueva ST creada. Edintel";
+    //TODO: Añadir link a la página de Edintel
+    let body = "";
+    if (code) {
+      body = `
+      <html>
+        <body>
+          <p>El usuario ${createdBy.name} ${createdBy.lastname} a creado una nueva solicutud.</p>
+          <p></p>
+          <p>La solicitud posee las siguientes características:</p>
+          <p><strong>Código ST:</strong> ${code}</p>
+          <p><strong>Tipo solicitud:</strong> ${type === 1 ? "Correctiva" : "Preventiva"}</p>
+          <p><strong>Cliente:</strong> ${site.clientName}</p>
+          <p><strong>Sitio:</strong> ${site.name}</p>
+          <p><strong>Sistema:</strong> ${systemName}</p>
+          <p><strong>Alcance:</strong> ${scope}</p>
+        </body>
+      </html>
+      `;
+    }
+    else {
+      body = `
+      <html>
+        <body>
+          <p>El cliente ${createdBy.name} ${createdBy.lastname} a creado una nueva solicutud a la espera de asignarle código ST.</p>
+          <p></p>
+          <p>La solicitud posee las siguientes características:</p>
+          <p><strong>Código ST:</strong> ${code}</p>
+          <p><strong>Tipo solicitud:</strong> ${type === 1 ? "Correctiva" : "Preventiva"}</p>
+          <p><strong>Cliente:</strong> ${site.clientName}</p>
+          <p><strong>Sitio:</strong> ${site.name}</p>
+          <p><strong>Sistema:</strong> ${systemName}</p>
+          <p><strong>Alcance:</strong> ${scope}</p>
+        </body>
+      </html>
+      `;
+    }
+
+    operators.forEach((operator, index) => {
+      const { email } = operator;
+      sendEmail(subject, body, email);
+    });
+
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create request error:", error);
@@ -217,10 +272,45 @@ router.post("/:id/assign", authenticateRole(2, 3), async (req, res) => {
     const { id } = req.params;
     const { idTechnician } = req.body;
     const request = await requestFunctions.getById(id);
-    `if(request.idTechnicianAssigned){
-      //Se envia correo diciendo que se deshafilio a la solicitud
-    }`
+    if(request.idTechnicianAssigned){
+      const pastTechnician = await userFunctions.getById(request.idTechnicianAssigned);
+      const subject= `La solicitud código ${request.code} ha sido reasignada`;
+      const emailBody = `
+      <html>
+        <body>
+          <p>Anteriormente la solicitud ${request.code} estaba asignada a usted pero la misma fue reasignada a otro técnico. La información de la ST era la siguiente:.</p>
+          <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
+          <p><strong>Cliente:</strong> ${request.clientName}</p>
+          <p><strong>Sitio:</strong> ${request.siteName}</p>
+          <p><strong>Sistema:</strong> ${request.systemName}</p>
+          <p><strong>Alcance:</strong> ${request.scope}</p>
+          <p>En caso de tener dudas con este proceso, comuníquese con su supervisor.</p>
+        </body>
+      </html>
+      `;
+  
+      await sendEmail(subject, emailBody, pastTechnician.email);
+    }
     const result = await requestFunctions.assignTechnician(id, idTechnician);
+
+    const subject= `La solicitud código ${request.code} se te ha asignado.`;
+    const url = process.env.PAGE_URL;
+    const emailBody = `
+    <html>
+      <body>
+        <p>La solicitud ${request.code} se te ha asignado. Esta posee las siguientes características:.</p>
+        <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
+        <p><strong>Cliente:</strong> ${request.clientName}</p>
+        <p><strong>Sitio:</strong> ${request.siteName}</p>
+        <p><strong>Sistema:</strong> ${request.systemName}</p>
+        <p><strong>Alcance:</strong> ${request.scope}</p>
+        <p>Por favor entra a la página para reconocer la tarea tan pronto como veas este correo.</p>
+        <p>Para más información, ingresa a la página de Edintel <a href="${url}">aquí</a>. Si después de esto, aún te quedan dudas, contacta a tu supervisor</p>
+      </body>
+    </html>
+    `;
+    const actualTechnician = await userFunctions.getById(idTechnician);
+    await sendEmail(subject, emailBody, actualTechnician.email);
     res.json({ message: result.message });
   } catch (error) {
     console.error("Assign technician error:", error);
@@ -262,10 +352,12 @@ router.post("/:id/assignDateTime", authenticateRole(2, 3), async (req, res) => {
 * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.post("/:id/ticketAndReport", authenticateRole(1,2,3,4), upload.fields([{ name: 'ticket', maxCount: 1 }, { name: 'report', maxCount: 1 }]), async (req, res) => {
+router.post("/:id/ticketAndReport", authenticateRole(1, 2, 3, 4), upload.fields([{ name: 'ticket', maxCount: 1 }, { name: 'report', maxCount: 1 }]), async (req, res) => {
   try {
     const { id } = req.params;
     const { ticket, report } = req.files;
+
+    const request = await requestFunctions.getById(id);
 
     let ticketPath = null;
     let reportPath = null;
@@ -279,7 +371,7 @@ router.post("/:id/ticketAndReport", authenticateRole(1,2,3,4), upload.fields([{ 
       if (existingTicketPath) {
         await fs.unlink(existingTicketPath);
       }
-      
+
       ticketPath = ticket[0].path;
 
     }
@@ -289,17 +381,51 @@ router.post("/:id/ticketAndReport", authenticateRole(1,2,3,4), upload.fields([{ 
       // Get the existing report path
       let existingReportPath = await requestFunctions.getReportPathOfRequest(id);
       existingReportPath = existingReportPath.reportFilePath
-      
+
       // Delete the existing report file if it exists
       if (existingReportPath) {
         await fs.unlink(existingReportPath);
       }
-      
+
       reportPath = report[0].path;
-      console.log("reportPath: ", reportPath);
     }
 
+    
     const result = await requestFunctions.assignTicketAndReportPathToRequest(id, ticketPath, reportPath);
+
+    
+    
+    const subject = `La solicitud ${request.code} ha sido finalizada.`;
+    //TODO: Añadir link a la página de Edintel
+    const body = `
+      <html>
+        <body>
+          <p>La solicitud ${request.code} ha sido finalizada.</p>
+          <p></p>
+          <p>Las caracteríticas de esta ST son las siguientes:</p>
+          <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
+          <p><strong>Cliente:</strong> ${request.clientName}</p>
+          <p><strong>Sitio:</strong> ${request.siteName}</p>
+          <p><strong>Sistema:</strong> ${request.systemName}</p>
+          <p><strong>Alcance:</strong> ${request.scope}</p>
+          <p>Por favor realizar la revisión de documentos para procesar el cierre de la misma.</p>
+        </body>
+      </html>
+      `;
+    if(request.idType===1){
+      const operators = await userFunctions.getOperators();
+      operators.forEach((operator, index) => {
+        const { email } = operator;
+        sendEmail(subject, body, email);
+      });
+    } else{
+      const supervisors = await userFunctions.getSupervisors();
+      supervisors.forEach((supervisor, index) => {
+        const { email } = supervisor;
+        sendEmail(subject, body, email);
+      });
+    }
+
     res.json({ message: result.message });
   } catch (error) {
     console.error("Assign TicketAndReport error:", error);
@@ -316,7 +442,7 @@ router.post("/:id/ticketAndReport", authenticateRole(1,2,3,4), upload.fields([{ 
 * @returns {Object}
  * @returns {File} message - A message indicating the result of the operation
  */
-router.get("/:id/report", authenticateRole(1,2,3,5), async (req, res) => {
+router.get("/:id/report", authenticateRole(1, 2, 3, 5), async (req, res) => {
   try {
     const { id } = req.params;
     const result = await requestFunctions.getReportPathOfRequest(id);
@@ -340,7 +466,7 @@ router.get("/:id/report", authenticateRole(1,2,3,5), async (req, res) => {
 * @returns {Object}
  * @returns {File} message - A message indicating the result of the operation
  */
-router.get("/:id/ticket", authenticateRole(1,2,3,5), async (req, res) => {
+router.get("/:id/ticket", authenticateRole(1, 2, 3, 5), async (req, res) => {
   try {
     const { id } = req.params;
     const result = await requestFunctions.getTicketPathOfRequest(id);
@@ -363,11 +489,34 @@ router.get("/:id/ticket", authenticateRole(1,2,3,5), async (req, res) => {
  * @returns {Object}
  * @returns {string} message - A message indicating the result of the operation
  */
-router.post("/:id/close", authenticateRole(1,2), async (req, res) => {
+router.post("/:id/close", authenticateRole(1, 2), async (req, res) => {
   try {
     const { id } = req.params;
+    const request = await requestFunctions.getById(id);
     const result = await requestFunctions.close(id);
-
+    const operators = await userFunctions.getOperators();
+    const subject = `La solicitud ${request.code} ha sido cerrada`;
+    //TODO: Añadir link a la página de Edintel
+    const body = `
+      <html>
+        <body>
+          <p>La solicitud ${request.code} ha sido cerrada.</p>
+          <p></p>
+          <p>Las caracteríticas de esta ST son las siguientes:</p>
+          <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
+          <p><strong>Cliente:</strong> ${request.clientName}</p>
+          <p><strong>Sitio:</strong> ${request.name}</p>
+          <p><strong>Sistema:</strong> ${request.systemName}</p>
+          <p><strong>Alcance:</strong> ${request.scope}</p>
+          <p>Para mayor información, ver la información de la ST en la página. De igual manera, los documentos adjuntos están disponibles para su descarga.</p>
+        </body>
+      </html>
+      `;
+    
+    operators.forEach((operator, index) => {
+      const { email } = operator;
+      sendEmail(subject, body, email);
+    });
     res.json({ message: result.message });
   } catch (error) {
     console.error("Close request error:", error);
