@@ -96,10 +96,8 @@ router.post("/", authenticateRole(2, 5), async (req, res) => {
       `;
     }
 
-    operators.forEach((operator, index) => {
-      const { email } = operator;
-      sendEmail(subject, body, email);
-    });
+    const recipients = operators.map((operator) => operator.email);
+    sendEmail(subject, body, recipients);
 
     res.status(201).json({ message: result.message });
   } catch (error) {
@@ -272,9 +270,9 @@ router.post("/:id/assign", authenticateRole(2, 3), async (req, res) => {
     const { id } = req.params;
     const { idTechnician } = req.body;
     const request = await requestFunctions.getById(id);
-    if(request.idTechnicianAssigned){
+    if (request.idTechnicianAssigned) {
       const pastTechnician = await userFunctions.getById(request.idTechnicianAssigned);
-      const subject= `La solicitud código ${request.code} ha sido reasignada`;
+      const subject = `La solicitud código ${request.code} ha sido reasignada`;
       const emailBody = `
       <html>
         <body>
@@ -288,12 +286,12 @@ router.post("/:id/assign", authenticateRole(2, 3), async (req, res) => {
         </body>
       </html>
       `;
-  
-      await sendEmail(subject, emailBody, pastTechnician.email);
+
+      sendEmail(subject, emailBody, [pastTechnician.email]);
     }
     const result = await requestFunctions.assignTechnician(id, idTechnician);
 
-    const subject= `La solicitud código ${request.code} se te ha asignado.`;
+    const subject = `La solicitud código ${request.code} se te ha asignado.`;
     const url = process.env.PAGE_URL;
     const emailBody = `
     <html>
@@ -310,7 +308,7 @@ router.post("/:id/assign", authenticateRole(2, 3), async (req, res) => {
     </html>
     `;
     const actualTechnician = await userFunctions.getById(idTechnician);
-    await sendEmail(subject, emailBody, actualTechnician.email);
+    sendEmail(subject, emailBody, [actualTechnician.email]);
     res.json({ message: result.message });
   } catch (error) {
     console.error("Assign technician error:", error);
@@ -390,11 +388,11 @@ router.post("/:id/ticketAndReport", authenticateRole(1, 2, 3, 4), upload.fields(
       reportPath = report[0].path;
     }
 
-    
+
     const result = await requestFunctions.assignTicketAndReportPathToRequest(id, ticketPath, reportPath);
 
-    
-    
+
+
     const subject = `La solicitud ${request.code} ha sido finalizada.`;
     //TODO: Añadir link a la página de Edintel
     const body = `
@@ -412,18 +410,14 @@ router.post("/:id/ticketAndReport", authenticateRole(1, 2, 3, 4), upload.fields(
         </body>
       </html>
       `;
-    if(request.idType===1){
+    if (request.idType === 1) {
       const operators = await userFunctions.getOperators();
-      operators.forEach((operator, index) => {
-        const { email } = operator;
-        sendEmail(subject, body, email);
-      });
-    } else{
+      const operatorEmails = operators.map((operator) => operator.email);
+      sendEmail(subject, body, operatorEmails);
+    } else {
       const supervisors = await userFunctions.getSupervisors();
-      supervisors.forEach((supervisor, index) => {
-        const { email } = supervisor;
-        sendEmail(subject, body, email);
-      });
+      const supervisorEmails = supervisors.map((supervisor) => supervisor.email);
+      sendEmail(subject, body, supervisorEmails);
     }
 
     res.json({ message: result.message });
@@ -512,11 +506,9 @@ router.post("/:id/close", authenticateRole(1, 2), async (req, res) => {
         </body>
       </html>
       `;
-    
-    operators.forEach((operator, index) => {
-      const { email } = operator;
-      sendEmail(subject, body, email);
-    });
+
+    const recipients = operators.map((operator) => operator.email);
+    sendEmail(subject, body, recipients);
     res.json({ message: result.message });
   } catch (error) {
     console.error("Close request error:", error);

@@ -74,7 +74,7 @@ router.post("/", authenticateRole(2), async (req, res) => {
       </body>
     </html>
     `;
-    sendEmail(subject, body, email);
+    sendEmail(subject, body, [email]);
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create user error:", error);
@@ -288,7 +288,7 @@ router.post(
       </html>
     `;
   
-      await sendEmail(subject, emailBody, user.email);
+      await sendEmail(subject, emailBody, [user.email]);
 
       res.status(201).json({ message: "Contraseña reestablecida con éxito." });
     } catch (error) {
