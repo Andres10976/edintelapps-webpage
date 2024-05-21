@@ -348,10 +348,14 @@ function RequestPage() {
       day: "numeric",
       hour: 'numeric',
       minute: 'numeric',
-      second: 'numeric', // Optionally include seconds 
+      second: 'numeric',
       timeZone: 'America/Costa_Rica'
     };
-    return new Date(dateString).toLocaleDateString('es-ES', options);
+  
+    const date = new Date(dateString);
+    date.setHours(date.getHours() + 6);
+  
+    return date.toLocaleDateString('es-ES', options);
   }
 
   function formatTime(datetimeString) {
@@ -728,7 +732,7 @@ function RequestPage() {
                       style={{ fontWeight: 'bold' }}
                       color={request.code ? 'inherit' : 'error'}
                     >
-                      {request.code || 'Código sin asignar'}
+                      {request.code || 'ST sin asignar'}
                     </Typography>
                     {request.idStatus === 1 && (
                       <NewReleasesIcon color="primary" sx={{ ml: 1 }} />
@@ -901,7 +905,7 @@ function RequestPage() {
               {selectedRequest.code ? (
                 selectedRequest.code
               ) : (
-                <Typography color="error">Código sin asignar</Typography>
+                <Typography color="error">ST sin asignar</Typography>
               )}
             </DialogTitle>
             <DialogContent>
@@ -1044,7 +1048,7 @@ function RequestPage() {
             <TextField
               fullWidth
               margin="normal"
-              label="Código"
+              label="ST"
               name="code"
               value={requestForm.code}
               onChange={(e) =>
