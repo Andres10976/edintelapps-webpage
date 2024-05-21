@@ -249,12 +249,16 @@ function RequestPage() {
     try {
       const formData = new FormData();
       if (ticketFile) {
-        formData.append("ticket", ticketFile);
+        const ticketExtension = ticketFile.name.split('.').pop();
+        const ticketFileName = `boleta-${selectedRequest.code}.${ticketExtension}`;
+        formData.append("ticket", new File([ticketFile], ticketFileName, { type: ticketFile.type }));
       }
       if (reportFile) {
-        formData.append("report", reportFile);
+        const reportExtension = reportFile.name.split('.').pop();
+        const reportFileName = `reporte-${selectedRequest.code}.${reportExtension}`;
+        formData.append("report", new File([reportFile], reportFileName, { type: reportFile.type }));
       }
-
+  
       const response = await axiosInstance.post(`/requests/${selectedRequest.id}/ticketAndReport`, formData);
       fetchRequests();
       setOpenFinishRequestDialog(false);
@@ -877,11 +881,11 @@ function RequestPage() {
             </MenuItem>
           )}
           {selectedRequest && (selectedRequest.idStatus === 5 || selectedRequest.idStatus === 6) && [
-            <MenuItem key="downloadTicket" onClick={() => downloadFile(`requests/${selectedRequest.id}/ticket`, 'ticket')}>
+            <MenuItem key="downloadTicket" onClick={() => downloadFile(`requests/${selectedRequest.id}/ticket`, `boleta-${selectedRequest.code}`)}>
               Descargar Boleta
             </MenuItem>,
             selectedRequest.idType === 2 && (
-              <MenuItem key="downloadReport" onClick={() => downloadFile(`requests/${selectedRequest.id}/report`, 'report')}>
+              <MenuItem key="downloadReport" onClick={() => downloadFile(`requests/${selectedRequest.id}/report`, `reporte-${selectedRequest.code}`)}>
                 Descargar Reporte
               </MenuItem>
             ),
@@ -1217,6 +1221,7 @@ function RequestPage() {
             type="file"
             accept=".pdf,.xlsx,.xls,.xlsb"
             onChange={(e) => setTicketFile(e.target.files[0])}
+            multiple={false}
           />
 
           {selectedRequest?.idType === 2 && (
@@ -1226,6 +1231,7 @@ function RequestPage() {
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => setReportFile(e.target.files[0])}
+                multiple={false}
               />
 
             </>

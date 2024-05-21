@@ -15,7 +15,10 @@ const storage = multer.diskStorage({
     cb(null, path.join(__dirname, '../files'));
   },
   filename: function (req, file, cb) {
-    const uniqueFileName = generateUniqueFilenameWithUUID(file.originalname);
+    const fileExtension = path.extname(file.originalname);
+    const baseName = path.basename(file.originalname, fileExtension);
+    const uniqueTextPart = generateUniqueFilenameWithUUID(file.originalname);
+    const uniqueFileName = `${baseName}_${uniqueTextPart}`;
     cb(null, uniqueFileName);
   }
 });
@@ -341,7 +344,7 @@ router.post("/:id/assignDateTime", authenticateRole(2, 3), async (req, res) => {
 
 /**
  * @route POST /:id/ticketAndReport
- * @description Assign a technician to a request
+ * @description Assign a ticket and report to a request
  * @access Private
  * @param {string} req.params.id - The ID of the request
  * @param {Object} req.body - The request body
