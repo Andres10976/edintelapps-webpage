@@ -30,12 +30,6 @@ function ClientPage() {
   const [roleId, setRoleId] = useState(null);
   const [newClient, setNewClient] = useState({
     name: "",
-    phone: "",
-    email: "",
-    contactName: "",
-    contactLastName: "",
-    contactPhone: "",
-    contactEmail: "",
   });
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageDialogContent, setMessageDialogContent] = useState("");
@@ -82,15 +76,10 @@ function ClientPage() {
   };
 
   const filteredClients = clients.filter((client) => {
-    const { name, email, contactName, contactLastName } = client;
+    const { name } = client;
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
     return (
-      name.toLowerCase().includes(lowerCaseSearchTerm) ||
-      (email && email.toLowerCase().includes(lowerCaseSearchTerm)) ||
-      (contactName &&
-        contactName.toLowerCase().includes(lowerCaseSearchTerm)) ||
-      (contactLastName &&
-        contactLastName.toLowerCase().includes(lowerCaseSearchTerm))
+      name.toLowerCase().includes(lowerCaseSearchTerm)
     );
   });
 
@@ -117,12 +106,6 @@ function ClientPage() {
     setSelectedClient(null);
     setNewClient({
       name: "",
-      phone: "",
-      email: "",
-      contactName: "",
-      contactLastName: "",
-      contactPhone: "",
-      contactEmail: "",
     });
   };
 
@@ -152,13 +135,9 @@ function ClientPage() {
   };
 
   const isCreateButtonDisabled = () => {
-    const { name, email, phone, contactEmail, contactPhone } = newClient;
+    const { name} = newClient;
     return (
-      name.trim().length < 2 ||
-      (email && !isValidEmail(email)) ||
-      (phone && !isValidPhone(phone)) ||
-      (contactEmail && !isValidEmail(contactEmail)) ||
-      (contactPhone && !isValidPhone(contactPhone))
+      name.trim().length < 2 
     );
   };
 
@@ -176,18 +155,6 @@ function ClientPage() {
         setErrorDialogOpen(true);
       }
     }
-  };
-
-  const isValidEmail = (email) => {
-    // Simple email validation regex pattern
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailPattern.test(email);
-  };
-
-  const isValidPhone = (phone) => {
-    // Simple phone validation regex pattern
-    const phonePattern = /^\d{8}$/;
-    return phonePattern.test(phone);
   };
 
   const canEditClient = [1, 2, 3].includes(roleId);
@@ -267,42 +234,6 @@ function ClientPage() {
         {selectedClient && (
           <>
             <DialogTitle>{selectedClient.name}</DialogTitle>
-            <DialogContent>
-              {selectedClient.phone && (
-                <Typography>
-                  <strong>Teléfono:</strong> {selectedClient.phone}
-                </Typography>
-              )}
-              {selectedClient.email && (
-                <Typography>
-                  <strong>Email:</strong> {selectedClient.email}
-                </Typography>
-              )}
-              {selectedClient.contactName && (
-                <Typography>
-                  <strong>Nombre del contacto:</strong>{" "}
-                  {selectedClient.contactName}
-                </Typography>
-              )}
-              {selectedClient.contactLastName && (
-                <Typography>
-                  <strong>Apellido del contacto:</strong>{" "}
-                  {selectedClient.contactLastName}
-                </Typography>
-              )}
-              {selectedClient.contactPhone && (
-                <Typography>
-                  <strong>Teléfono del contacto:</strong>{" "}
-                  {selectedClient.contactPhone}
-                </Typography>
-              )}
-              {selectedClient.contactEmail && (
-                <Typography>
-                  <strong>Email del contacto:</strong>{" "}
-                  {selectedClient.contactEmail}
-                </Typography>
-              )}
-            </DialogContent>
           </>
         )}
       </Dialog>
@@ -326,190 +257,6 @@ function ClientPage() {
             }
             required
           />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Teléfono"
-            name="phone"
-            value={selectedClient ? selectedClient.phone : newClient.phone}
-            onChange={
-              selectedClient ? (e) =>
-                setSelectedClient({ ...selectedClient, phone: e.target.value })
-              : handleInputChange
-            }
-            error={
-              (selectedClient
-                ? selectedClient.phone
-                : newClient.phone && !isValidPhone(newClient.phone)) &&
-              !isValidPhone(
-                selectedClient ? selectedClient.phone : newClient.phone
-              )
-            }
-            helperText={
-              (selectedClient
-                ? selectedClient.phone
-                : newClient.phone && !isValidPhone(newClient.phone)) &&
-              !isValidPhone(
-                selectedClient ? selectedClient.phone : newClient.phone
-              )
-                ? "Número de teléfono inválido"
-                : ""
-            }
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Email"
-            name="email"
-            value={selectedClient ? selectedClient.email : newClient.email}
-            onChange={
-              selectedClient ? (e) =>
-                setSelectedClient({ ...selectedClient, email: e.target.value })
-              : handleInputChange
-            }
-            error={
-              (selectedClient
-                ? selectedClient.email
-                : newClient.email && !isValidEmail(newClient.email)) &&
-              !isValidEmail(
-                selectedClient ? selectedClient.email : newClient.email
-              )
-            }
-            helperText={
-              (selectedClient
-                ? selectedClient.email
-                : newClient.email && !isValidEmail(newClient.email)) &&
-              !isValidEmail(
-                selectedClient ? selectedClient.email : newClient.email
-              )
-                ? "Email inválido"
-                : ""
-            }
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Nombre del contacto"
-            name="contactName"
-            value={
-              selectedClient
-                ? selectedClient.contactName
-                : newClient.contactName
-            }
-            onChange={
-              selectedClient ? (e) =>
-                setSelectedClient({
-                  ...selectedClient,
-                  contactName: e.target.value,
-                })
-              : handleInputChange
-            }
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Apellido del contacto"
-            name="contactLastName"
-            value={
-              selectedClient
-                ? selectedClient.contactLastName
-                : newClient.contactLastName
-            }
-            onChange={
-              selectedClient ? (e) =>
-                setSelectedClient({
-                  ...selectedClient,
-                  contactLastName: e.target.value,
-                })
-              : handleInputChange
-            }
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Teléfono del contacto"
-            name="contactPhone"
-            value={
-              selectedClient
-                ? selectedClient.contactPhone
-                : newClient.contactPhone
-            }
-            onChange={
-              selectedClient ? (e) =>
-                setSelectedClient({
-                  ...selectedClient,
-                  contactPhone: e.target.value,
-                })
-              : handleInputChange
-            }
-            error={
-              (selectedClient
-                ? selectedClient.contactPhone
-                : newClient.contactPhone &&
-                  !isValidPhone(newClient.contactPhone)) &&
-              !isValidPhone(
-                selectedClient
-                  ? selectedClient.contactPhone
-                  : newClient.contactPhone
-              )
-            }
-            helperText={
-              (selectedClient
-                ? selectedClient.contactPhone
-                : newClient.contactPhone &&
-                  !isValidPhone(newClient.contactPhone)) &&
-              !isValidPhone(
-                selectedClient
-                  ? selectedClient.contactPhone
-                  : newClient.contactPhone
-              )
-                ? "Número de teléfono del contacto inválido"
-                : ""
-            }
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Email del contacto"
-            name="contactEmail"
-            value={
-              selectedClient
-                ? selectedClient.contactEmail
-                : newClient.contactEmail
-            }
-            onChange={
-              selectedClient ? (e) =>
-                setSelectedClient({
-                  ...selectedClient,
-                  contactEmail: e.target.value,
-                })
-              : handleInputChange
-            }
-            error={
-              (selectedClient
-                ? selectedClient.contactEmail
-                : newClient.contactEmail &&
-                  !isValidEmail(newClient.contactEmail)) &&
-              !isValidEmail(
-                selectedClient
-                  ? selectedClient.contactEmail
-                  : newClient.contactEmail
-              )
-            }
-            helperText={
-              (selectedClient
-                ? selectedClient.contactEmail
-                : newClient.contactEmail &&
-                  !isValidEmail(newClient.contactEmail)) &&
-              !isValidEmail(
-                selectedClient
-                  ? selectedClient.contactEmail
-                  : newClient.contactEmail
-              )
-                ? "Email del contacto inválido"
-                : ""
-            }
-          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCreateDialog}>Cancelar</Button>
@@ -531,13 +278,7 @@ function ClientPage() {
               }}
               color="primary"
               disabled={
-                selectedClient.name.trim().length < 2 ||
-                (selectedClient.email && !isValidEmail(selectedClient.email)) ||
-                (selectedClient.phone && !isValidPhone(selectedClient.phone)) ||
-                (selectedClient.contactEmail &&
-                  !isValidEmail(selectedClient.contactEmail)) ||
-                (selectedClient.contactPhone &&
-                  !isValidPhone(selectedClient.contactPhone))
+                selectedClient.name.trim().length < 2
               }
             >
               Actualizar cliente
@@ -559,8 +300,7 @@ function ClientPage() {
         open={openConfirmationDialog}
         onClose={() => setOpenConfirmationDialog(false)}
       >
-        <DialogTitle>
-        Confirmar eliminación</DialogTitle>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <Typography>
             ¿Estás seguro que deseas eliminar el cliente "{selectedClient?.name}

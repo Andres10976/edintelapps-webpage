@@ -7,12 +7,7 @@ const sendEmail = require("../utils/mailHelper");
 const router = express.Router();
 require("dotenv").config();
 
-/**
- * Retrieves a list of user roles.
- * @route GET /users/roles
- * @returns {Array<Object>} An array of user objects.
- * @access Private (Admin only)
- */
+
 router.get("/roles", authenticateRole(2), async (req, res) => {
   try {
     const roles = await userFunctions.roles();
@@ -23,16 +18,10 @@ router.get("/roles", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Creates a new user.
- * @route POST /users
- * @returns {Object} Message indicating the user creation status.
- * @returns {string} message - The success message.
- * @access Private (Admin only)
- */
+
 router.post("/", authenticateRole(2), async (req, res) => {
   try {
-    const { username, email, name, lastname, roleId, phone, clientId, siteId } =
+    const { username, email, name, lastname, roleId, phone, companyId, clientId } =
       req.body;
 
     const randomPassword = generateRandomPassword(16, true, true, true, true);
@@ -51,8 +40,8 @@ router.post("/", authenticateRole(2), async (req, res) => {
       lastname,
       roleId,
       phone,
-      clientId,
-      siteId
+      companyId,
+      clientId
     );
 
     const subject = "Bienvenido a Edintel";
@@ -82,12 +71,7 @@ router.post("/", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Retrieves a list of users.
- * @route GET /users
- * @returns {Array<Object>} An array of user objects.
- * @access Private (Admin only)
- */
+
 router.get("/", authenticateRole(2), async (req, res) => {
   try {
     const users = await userFunctions.getAll();
@@ -98,25 +82,7 @@ router.get("/", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Retrieves a user by their ID.
- * @route GET /users/:id
- * @param {number} id - The ID of the user.
- * @returns {Object} The user object.
- * @returns {number} id - The ID of the user.
- * @returns {string} email - The email address of the user.
- * @returns {string} phone - The phone number of the user.
- * @returns {string} username - The username of the user.
- * @returns {number} roleId - The role ID of the user.
- * @returns {string} rolename - The name of the user's role.
- * @returns {string} name - The first name of the user.
- * @returns {string} lastname - The last name of the user.
- * @returns {boolean} isActive - Indicates whether the user is active.
- * @returns {string} passwordHash - The hashed password of the user.
- * @returns {string} salt - The salt used for password hashing.
- * @returns {Date} createdAt - The date and time when the user was created.
- * @access Private (Admin only)
- */
+
 router.get("/:id", authenticateRole(2, 3, 4, 5), async (req, res) => {
   try {
     const { id } = req.params;
@@ -128,25 +94,7 @@ router.get("/:id", authenticateRole(2, 3, 4, 5), async (req, res) => {
   }
 });
 
-/**
- * Retrieves a user by their username.
- * @route GET /users/username/:username
- * @param {string} username - The username of the user.
- * @returns {Object} The user object.
- * @returns {number} id - The ID of the user.
- * @returns {string} email - The email address of the user.
- * @returns {string} username - The username of the user.
- * @returns {string} phone - The phone number of the user.
- * @returns {number} roleId - The role ID of the user.
- * @returns {string} roleName - The name of the user's role.
- * @returns {string} name - The first name of the user.
- * @returns {string} lastname - The last name of the user.
- * @returns {string} passwordHash - The hashed password of the user.
- * @returns {string} salt - The salt used for password hashing.
- * @returns {boolean} isActive - Indicates whether the user is active.
- * @returns {Date} createdAt - The date and time when the user was created.
- * @access Private (Admin only)
- */
+
 router.get("/username/:username", authenticateRole(2), async (req, res) => {
   try {
     const { username } = req.params;
@@ -158,18 +106,11 @@ router.get("/username/:username", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Updates a user's information.
- * @route PUT /users/:id
- * @param {number} id - The ID of the user.
- * @returns {Object} Message indicating the user update status.
- * @returns {string} message - The success message.
- * @access Private (Admin only)
- */
+
 router.put("/:id", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, name, lastname, roleId, phone, clientId, siteId } = req.body;
+    const { username, email, name, lastname, roleId, phone, clientId, companyId } = req.body;
     const result = await userFunctions.update(
       id,
       username,
@@ -179,7 +120,7 @@ router.put("/:id", authenticateRole(2), async (req, res) => {
       roleId,
       phone,
       clientId,
-      siteId
+      companyId
     );
     res.json({ message: result.message });
   } catch (error) {
@@ -188,14 +129,7 @@ router.put("/:id", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Delete a user.
- * @route PUT /users/:id/deactivate
- * @param {number} id - The ID of the user to deactivate.
- * @returns {Object} Message indicating the user deactivation status.
- * @returns {string} message - The success message.
- * @access Private (Admin only)
- */
+
 router.delete("/:id", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
@@ -207,14 +141,7 @@ router.delete("/:id", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Reactivates a user.
- * @route PUT /users/:id/reactivate
- * @param {number} id - The ID of the user to reactivate.
- * @returns {Object} Message indicating the user reactivation status.
- * @returns {string} message - The success message.
- * @access Private (Admin only)
- */
+
 router.put("/:id/reactivate", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
@@ -226,14 +153,7 @@ router.put("/:id/reactivate", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Updates a user's role.
- * @route PUT /users/:id/role
- * @param {number} id - The ID of the user.
- * @returns {Object} Message indicating the user role update status.
- * @returns {string} message - The success message.
- * @access Private (Admin only)
- */
+
 router.put("/:id/role", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
@@ -246,14 +166,7 @@ router.put("/:id/role", authenticateRole(2), async (req, res) => {
   }
 });
 
-/**
- * Resets a user's password.
- * @route POST /users/:id/reset-password
- * @param {number} id - The ID of the user.
- * @returns {Object} Message indicating the password reset status.
- * @returns {string} message - The success message.
- * @access Private (Authenticated users)
- */
+
 router.post(
   "/:id/reset-password",
   authenticateRole(2, 3, 4, 5),
@@ -297,5 +210,41 @@ router.post(
     }
   }
 );
+
+router.put("/:id/role", authenticateRole(2), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { roleId } = req.body;
+    const result = await userFunctions.updateRole(id, roleId);
+    res.json({ message: result.message });
+  } catch (error) {
+    console.error("Update user role error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.put("/:id/assignSite", authenticateRole(2), async (req, res) => {
+  try{
+    const { id } = req.params;
+    const { idSite } = req.body;
+    const result = await userFunctions.assignSite(idSite, id);
+    res.json({message: result.message});
+  } catch (error){
+    console.error("Assign site to user error:", error);
+    res.status(500).json({message: error.message});
+  }
+});
+
+router.put("/:id/dissociateSite", authenticateRole(2), async (req, res) => {
+  try{
+    const { id } = req.params;
+    const { idSite } = req.body;
+    const result = await userFunctions.assignSite(idSite, id);
+    res.json({message: result.message});
+  } catch (error){
+    console.error("Assign site to user error:", error);
+    res.status(500).json({message: error.message});
+  }
+});
 
 module.exports = router;

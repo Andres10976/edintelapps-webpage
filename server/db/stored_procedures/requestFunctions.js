@@ -1,19 +1,7 @@
 const sql = require("mssql");
 const { executeSp } = require("../db");
 
-/**
- * Creates a new request.
- * @param {number} idSite - The ID of the site.
- * @param {string} code - The code of the request.
- * @param {number} type - The type of the request.
- * @param {string} scope - The scope of the request.
- * @param {number} createdBy - The ID of the user who created the request.
- * @param {number} idSystem - The ID of the system.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- *   - idRequest: The ID of the created request (if successful).
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function createRequest(idSite, code, type, scope, createdBy, idSystem) {
   try {
     const result = await executeSp("sp_CreateRequest", [
@@ -30,30 +18,20 @@ async function createRequest(idSite, code, type, scope, createdBy, idSystem) {
   }
 }
 
-/**
- * Retrieves requests for a specific client.
- * @param {number} idClient - The ID of the client.
- * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests.
- *   Each object contains the following properties:
- *   - id: The ID of the request.
- *   - idSite: The ID of the site.
- *   - siteName: The name of the site.
- *   - code: The code of the request.
- *   - idSystem: The ID of the system.
- *   - systemName: The name of the system.
- *   - idType: The ID of the request type.
- *   - requestTypeName: The name of the request type.
- *   - scope: The scope of the request.
- *   - idStatus: The ID of the request status.
- *   - statusName: The name of the request status.
- *   - idCreatedBy: The ID of the user who created the request.
- *   - createdByUsername: The username of the user who created the request.
- *   - createdAt: The date and time when the request was created.
- * @throws {Error} - If an error occurs during the operation.
- */
-async function getRequestsPerClient(idClient) {
+async function getRequestsByCompany(idCompany) {
   try {
-    const result = await executeSp("sp_GetRequestsPerClient", [
+    const result = await executeSp("sp_GetRequestsByCompany", [
+      { name: "idCompany", value: idCompany, type: sql.Int },
+    ]);
+    return result;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function getRequestsByClient(idClient) {
+  try {
+    const result = await executeSp("sp_GetRequestsByClient", [
       { name: "idClient", value: idClient, type: sql.Int },
     ]);
     return result;
@@ -62,16 +40,10 @@ async function getRequestsPerClient(idClient) {
   }
 }
 
-/**
- * Retrieves requests for a specific site.
- * @param {number} idSite - The ID of the site.
- * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests.
- *   Each object contains the same properties as described in the getRequestPerClient function.
- * @throws {Error} - If an error occurs during the operation.
- */
-async function getRequestPerSite(idSite) {
+
+async function getRequestBySite(idSite) {
   try {
-    const result = await executeSp("sp_GetRequestPerSite", [
+    const result = await executeSp("sp_GetRequestBySite", [
       { name: "idSite", value: idSite, type: sql.Int },
     ]);
     return result;
@@ -80,33 +52,6 @@ async function getRequestPerSite(idSite) {
   }
 }
 
-/**
- * Retrieves a request by its ID.
- * @param {number} idRequest - The ID of the request.
- * @returns {Promise<object>} - A promise that resolves to an object representing the request.
- *   The object contains the following properties:
- *   - id: The ID of the request.
- *   - idSite: The ID of the site.
- *   - siteName: The name of the site.
- *   - code: The code of the request.
- *   - idSystem: The ID of the system.
- *   - systemName: The name of the system.
- *   - idRequestType: The ID of the request type.
- *   - requestTypeName: The name of the request type.
- *   - scope: The scope of the request.
- *   - idStatus: The ID of the request status.
- *   - statusName: The name of the request status.
- *   - idCreatedBy: The ID of the user who created the request.
- *   - createdByUsername: The username of the user who created the request.
- *   - createdAt: The date and time when the request was created.
- *   - idTechnicianAssigned: The ID of the technician assigned to the request.
- *   - technicianUsername: The username of the technician assigned to the request.
- *   - technicianFullName: The full name of the technician assigned to the request.
- *   - technicianAssignedDatetime: The date and time when the technician was assigned to the request.
- *   - technicianAcknowledgeDatetime: The date and time when the technician acknowledged the request.
- *   - technicianStartingWorkDatetime: The date and time when the technician started working on the request.
- * @throws {Error} - If an error occurs during the operation.
- */
 async function getRequestById(idRequest) {
   try {
     const result = await executeSp("sp_GetRequestById", [
@@ -118,13 +63,6 @@ async function getRequestById(idRequest) {
   }
 }
 
-/**
- * Deletes a request by its ID.
- * @param {number} idRequest - The ID of the request.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
 async function deleteRequest(idRequest) {
   try {
     const result = await executeSp("sp_DeleteRequest", [
@@ -136,13 +74,7 @@ async function deleteRequest(idRequest) {
   }
 }
 
-/**
- * Retrieves requests assigned to a specific technician.
- * @param {number} idTechnician - The ID of the technician.
- * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests.
- *   Each object contains the same properties as described in the getRequestPerClient function.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function getRequestsByAssignedTechnician(idTechnician) {
   try {
     const result = await executeSp("sp_GetRequestsByAssignedTechnician", [
@@ -154,12 +86,7 @@ async function getRequestsByAssignedTechnician(idTechnician) {
   }
 }
 
-/**
- * Retrieves all requests.
- * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests.
- *   Each object contains the same properties as described in the getRequestPerClient function.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function getRequests() {
   try {
     const result = await executeSp("sp_GetRequests");
@@ -169,18 +96,7 @@ async function getRequests() {
   }
 }
 
-/**
- * Updates a request.
- * @param {number} id - The ID of the request.
- * @param {number} idSite - The ID of the site.
- * @param {string} code - The code of the request.
- * @param {number} type - The type of the request.
- * @param {string} scope - The scope of the request.
- * @param {number} idSystem - The ID of the system.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function updateRequest(id, idSite, code, type, scope, idSystem) {
   try {
     const result = await executeSp("sp_UpdateRequest", [
@@ -198,20 +114,7 @@ async function updateRequest(id, idSite, code, type, scope, idSystem) {
   }
 }
 
-/**
- * Updates a request.
- * @param {number} id - The ID of the request.
- * @param {number} idSite - The ID of the site.
- * @param {string} code - The code of the request.
- * @param {number} type - The type of the request.
- * @param {string} scope - The scope of the request.
- * @param {number} idSystem - The ID of the system.
- * @param {number} tentativeDate - The tentative date execution of the request.
- * @param {number} tentativeTime - The tentative time execution of the request.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function assignTentativeDateTime(id, tentativeDate, tentativeTime) {
   try {
     const result = await executeSp("sp_AssignTentativeDateTime", [
@@ -225,15 +128,7 @@ async function assignTentativeDateTime(id, tentativeDate, tentativeTime) {
   }
 }
 
-/**
- * Assign a ticket and a report to a request.
- * @param {number} id - The ID of the request.
- * @param {number} ticket - A ticket to be assign to the request.
- * @param {number} report - A report to be assign to the request.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function assignTicketAndReportPathToRequest(id, ticket = null, report = null) {
   try {
     const result = await executeSp("sp_AssignTicketAndReportToRequest", [
@@ -247,13 +142,7 @@ async function assignTicketAndReportPathToRequest(id, ticket = null, report = nu
   }
 }
 
-/**
- * Get the ticket path of a request.
- * @param {number} id - The ID of the request.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function getTicketPathOfRequest(id) {
   try {
     const result = await executeSp("sp_GetTicketFromRequest", [
@@ -265,13 +154,7 @@ async function getTicketPathOfRequest(id) {
   }
 }
 
-/**
- * Get the report path of a request.
- * @param {number} id - The ID of the request.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function getReportPathOfRequest(id) {
   try {
     const result = await executeSp("sp_GetReportFromRequest", [
@@ -283,15 +166,7 @@ async function getReportPathOfRequest(id) {
   }
 }
 
-/**
- * Assigns a technician to a request.
- * @param {number} idRequest - The ID of the request.
- * @param {number} idTechnician - The ID of the technician.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- *   - idRequest: The ID of the request.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function assignTechnicianToRequest(idRequest, idTechnician) {
   try {
     const result = await executeSp("sp_AssignTechnicianToRequest", [
@@ -304,14 +179,7 @@ async function assignTechnicianToRequest(idRequest, idTechnician) {
   }
 }
 
-/**
- * Acknowledges a request by a technician.
- * @param {number} idRequest - The ID of the request.
- * @param {number} idTechnician - The ID of the technician.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function acknowledgeRequestByTechnician(idRequest, idTechnician) {
   try {
     const result = await executeSp("sp_AcknowledgeRequestByTechnician", [
@@ -324,14 +192,7 @@ async function acknowledgeRequestByTechnician(idRequest, idTechnician) {
   }
 }
 
-/**
- * Starts a request by a technician.
- * @param {number} idRequest - The ID of the request.
- * @param {number} idTechnician - The ID of the technician.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function startRequestByTechnician(idRequest, idTechnician) {
   try {
     const result = await executeSp("sp_StartRequestByTechnician", [
@@ -344,14 +205,7 @@ async function startRequestByTechnician(idRequest, idTechnician) {
   }
 }
 
-/**
- * Get the requests types.
- * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests types.
- *   Each object contains the following properties:
- *   - id: The ID of the request type.
- *   - name: The name of the request type.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function getRequestTypes() {
   try {
     const result = await executeSp("sp_GetRequestTypes");
@@ -361,14 +215,7 @@ async function getRequestTypes() {
   }
 }
 
-/**
- * Get the requests types.
- * @returns {Promise<object[]>} - A promise that resolves to an array of objects representing the requests status.
- *   Each object contains the following properties:
- *   - id: The ID of the request type.
- *   - name: The name of the request type.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function getRequestStatus() {
   try {
     const result = await executeSp("sp_GetRequestStatuses");
@@ -378,13 +225,7 @@ async function getRequestStatus() {
   }
 }
 
-/**
- * Close a request.
- * @param {number} idRequest - The ID of the request.
- * @returns {Promise<object>} - A promise that resolves to an object containing the following properties:
- *   - message: A string indicating the result of the operation.
- * @throws {Error} - If an error occurs during the operation.
- */
+
 async function closeRequest(idRequest) {
   try {
     const result = await executeSp("sp_CloseRequestById", [
@@ -398,8 +239,9 @@ async function closeRequest(idRequest) {
 
 module.exports = {
   create: createRequest,
-  getByClient: getRequestsPerClient,
-  getBySite: getRequestPerSite,
+  getByCompany: getRequestsByCompany,
+  getByClient: getRequestsByClient,
+  getBySite: getRequestBySite,
   getByAssignedTechnician: getRequestsByAssignedTechnician,
   getById: getRequestById,
   getAll: getRequests,

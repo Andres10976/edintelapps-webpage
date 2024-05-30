@@ -1,19 +1,6 @@
 const sql = require("mssql");
 const { executeSp } = require("../db");
 
-/**
- * Creates a new user.
- * @param {string} username - The username of the user.
- * @param {string} passwordHash - The hashed password of the user.
- * @param {string} salt - The salt used for password hashing.
- * @param {string} email - The email address of the user.
- * @param {string} name - The first name of the user.
- * @param {string} lastname - The last name of the user.
- * @param {number} roleId - The role ID of the user.
- * @param {string} [phone=''] - The phone number of the user (optional).
- * @returns {Promise<void>} - A promise that resolves when the user is created successfully.
- * @throws {Error} - Throws an error if the user creation fails.
- */
 async function createUser(
   username,
   passwordHash,
@@ -24,7 +11,7 @@ async function createUser(
   roleId,
   phone = null,
   clientId = null,
-  siteId = null
+  companyId = null
 ) {
   try {
     const result = await executeSp("sp_CreateUser", [
@@ -37,7 +24,7 @@ async function createUser(
       { name: "roleId", value: roleId, type: sql.SmallInt },
       { name: "phone", value: phone, type: sql.VarChar(20) },
       { name: "clientId", value: clientId, type: sql.Int },
-      { name: "siteId", value: siteId, type: sql.Int },
+      { name: "companyId", value: companyId, type: sql.Int },
     ]);
     return result.at(0);
   } catch (error) {
@@ -45,11 +32,7 @@ async function createUser(
   }
 }
 
-/**
- * Retrieves a list of users.
- * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
+
 async function getUsers() {
   try {
     const result = await executeSp("sp_GetUsers");
@@ -59,11 +42,7 @@ async function getUsers() {
   }
 }
 
-/**
- * Retrieves a list of technicians.
- * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
+
 async function getTechnicians() {
   try {
     const result = await executeSp("sp_GetTechnicians");
@@ -73,11 +52,7 @@ async function getTechnicians() {
   }
 }
 
-/**
- * Retrieves a list of supervisors.
- * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
+
 async function getSupervisors() {
   try {
     const result = await executeSp("sp_GetSupervisors");
@@ -87,11 +62,6 @@ async function getSupervisors() {
   }
 }
 
-/**
- * Retrieves a list of operators.
- * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
 async function getOperators() {
   try {
     const result = await executeSp("sp_GetOperators");
@@ -101,11 +71,7 @@ async function getOperators() {
   }
 }
 
-/**
- * Retrieves a list of clients.
- * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
+
 async function getClients() {
   try {
     const result = await executeSp("sp_GetClientUsers");
@@ -116,11 +82,6 @@ async function getClients() {
 }
 
 
-/**
- * Retrieves a list of user roles with its id and name.
- * @returns {Promise<Array>} - A promise that resolves to an array of user objects.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
 async function getUserRoles() {
   try {
     const result = await executeSp("sp_GetRoles");
@@ -130,24 +91,6 @@ async function getUserRoles() {
   }
 }
 
-/**
- * Retrieves a user by their ID.
- * @param {number} userId - The ID of the user.
- * @returns {Promise<Object>} - A promise that resolves to a user object with the following properties:
- *   - id (number): The ID of the user.
- *   - email (string): The email address of the user.
- *   - phone (string): The phone number of the user.
- *   - username (string): The username of the user.
- *   - roleId (number): The role ID of the user.
- *   - rolename (string): The name of the user's role.
- *   - name (string): The first name of the user.
- *   - lastname (string): The last name of the user.
- *   - isActive (boolean): Indicates whether the user is active.
- *   - passwordHash (string): The hashed password of the user.
- *   - salt (string): The salt used for password hashing.
- *   - createdAt (Date): The date and time when the user was created.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
 async function getUserById(userId) {
   try {
     const result = await executeSp("sp_GetUserById", [
@@ -159,24 +102,6 @@ async function getUserById(userId) {
   }
 }
 
-/**
- * Retrieves a user by their username.
- * @param {string} username - The username of the user.
- * @returns {Promise<Object>} - A promise that resolves to a user object with the following properties:
- *   - id (number): The ID of the user.
- *   - email (string): The email address of the user.
- *   - username (string): The username of the user.
- *   - phone (string): The phone number of the user.
- *   - roleId (number): The role ID of the user.
- *   - roleName (string): The name of the user's role.
- *   - name (string): The first name of the user.
- *   - lastname (string): The last name of the user.
- *   - passwordHash (string): The hashed password of the user.
- *   - salt (string): The salt used for password hashing.
- *   - isActive (boolean): Indicates whether the user is active.
- *   - createdAt (Date): The date and time when the user was created.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
 async function getUserByUsername(username) {
   try {
     const result = await executeSp("sp_GetUserByUsername", [
@@ -188,24 +113,6 @@ async function getUserByUsername(username) {
   }
 }
 
-/**
- * Retrieves a user by their email address.
- * @param {string} email - The email address of the user.
- * @returns {Promise<Object>} - A promise that resolves to a user object with the following properties:
- *   - id (number): The ID of the user.
- *   - email (string): The email address of the user.
- *   - username (string): The username of the user.
- *   - phone (string): The phone number of the user.
- *   - roleId (number): The role ID of the user.
- *   - roleName (string): The name of the user's role.
- *   - name (string): The first name of the user.
- *   - lastname (string): The last name of the user.
- *   - passwordHash (string): The hashed password of the user.
- *   - salt (string): The salt used for password hashing.
- *   - isActive (boolean): Indicates whether the user is active.
- *   - createdAt (Date): The date and time when the user was created.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
 async function getUserByEmail(email) {
   try {
     const result = await executeSp("sp_GetUserByEmail", [
@@ -217,23 +124,7 @@ async function getUserByEmail(email) {
   }
 }
 
-/**
- * Retrieves a user by their password reset token.
- * @param {string} token - The password reset token.
- * @returns {Promise<Object>} - A promise that resolves to a user object with the following properties:
- *   - id (number): The ID of the user.
- *   - email (string): The email address of the user.
- *   - phone (string): The phone number of the user.
- *   - roleId (number): The role ID of the user.
- *   - roleName (string): The name of the user's role.
- *   - name (string): The first name of the user.
- *   - lastname (string): The last name of the user.
- *   - passwordHash (string): The hashed password of the user.
- *   - salt (string): The salt used for password hashing.
- *   - isActive (boolean): Indicates whether the user is active.
- *   - createdAt (Date): The date and time when the user was created.
- * @throws {Error} - Throws an error if the user retrieval fails.
- */
+
 async function getUserByResetToken(token) {
   try {
     const result = await executeSp("sp_GetUserByResetToken", [
@@ -245,21 +136,7 @@ async function getUserByResetToken(token) {
   }
 }
 
-/**
- * Updates a user's information.
- * @param {number} id - The ID of the user.
- * @param {string} username - The updated username of the user.
- * @param {string} email - The updated email address of the user.
- * @param {string} name - The updated first name of the user.
- * @param {string} lastname - The updated last name of the user.
- * @param {number} roleId - The updated role ID of the user.
- * @param {string} phone - The updated phone number of the user.
- * @param {number} clientId - If the created user is a client role, this must be entered.
- * @param {number} siteId - If the created user is a client role, this must be entered.
- * @returns {Promise<void>} - A promise that resolves when the user is updated successfully.
- * @throws {Error} - Throws an error if the user update fails.
- */
-async function updateUser(id, username, email, name, lastname, roleId, phone=null, clientId=null, siteId=null) {
+async function updateUser(id, username, email, name, lastname, roleId, phone=null, clientId=null, companyId=null) {
   try {
     const result = await executeSp("sp_UpdateUser", [
       { name: "id", value: id, type: sql.Int },
@@ -270,7 +147,7 @@ async function updateUser(id, username, email, name, lastname, roleId, phone=nul
       { name: "phone", value: phone, type: sql.VarChar(20) },
       { name: "roleId", value: roleId, type: sql.SmallInt },
       { name: "clientId", value: clientId, type: sql.Int },
-      { name: "siteId", value: siteId, type: sql.Int },
+      { name: "companyId", value: companyId, type: sql.Int },
     ]);
     return result.at(0);
   } catch (error) {
@@ -278,12 +155,7 @@ async function updateUser(id, username, email, name, lastname, roleId, phone=nul
   }
 }
 
-/**
- * Deactivates a user.
- * @param {number} userId - The ID of the user to deactivate.
- * @returns {Promise<void>} - A promise that resolves when the user is deactivated successfully.
- * @throws {Error} - Throws an error if the user deactivation fails.
- */
+
 async function deactivateUser(userId) {
   try {
     const result = await executeSp("sp_DeactivateUser", [
@@ -295,12 +167,7 @@ async function deactivateUser(userId) {
   }
 }
 
-/**
- * Reactivates a user.
- * @param {number} userId - The ID of the user to reactivate.
- * @returns {Promise<void>} - A promise that resolves when the user is reactivated successfully.
- * @throws {Error} - Throws an error if the user reactivation fails.
- */
+
 async function reactivateUser(userId) {
   try {
     const result = await executeSp("sp_ReactivateUser", [
@@ -312,13 +179,7 @@ async function reactivateUser(userId) {
   }
 }
 
-/**
- * Updates a user's role.
- * @param {number} userId - The ID of the user.
- * @param {number} roleId - The new role ID for the user.
- * @returns {Promise<void>} - A promise that resolves when the user's role is updated successfully.
- * @throws {Error} - Throws an error if the role update fails.
- */
+
 async function updateUserRole(userId, roleId) {
   try {
     const result = await executeSp("sp_UpdateUserRole", [
@@ -331,14 +192,6 @@ async function updateUserRole(userId, roleId) {
   }
 }
 
-/**
- * Resets a user's password.
- * @param {number} id - The ID of the user.
- * @param {string} newPasswordHash - The new hashed password.
- * @param {string} salt - The salt used for password hashing.
- * @returns {Promise<void>} - A promise that resolves when the password is reset successfully.
- * @throws {Error} - Throws an error if the password reset fails.
- */
 async function resetPasswordByUserId(id, newPasswordHash, salt) {
   try {
     const result = await executeSp("sp_ResetPasswordById", [
@@ -356,14 +209,6 @@ async function resetPasswordByUserId(id, newPasswordHash, salt) {
   }
 }
 
-/**
- * Saves a password reset token for a user.
- * @param {number} id - The ID of the user.
- * @param {string} resetToken - The password reset token.
- * @param {Date} resetTokenExpires - The expiration date and time of the reset token.
- * @returns {Promise<void>} - A promise that resolves when the reset token is saved successfully.
- * @throws {Error} - Throws an error if saving the reset token fails.
- */
 async function savePasswordResetToken(id, resetToken, resetTokenExpires) {
   try {
     const result = await executeSp("sp_SavePasswordResetToken", [
@@ -374,6 +219,30 @@ async function savePasswordResetToken(id, resetToken, resetTokenExpires) {
         value: resetTokenExpires,
         type: sql.DateTime,
       },
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function assignSiteToUser(idSite, idUser) {
+  try {
+    const result = await executeSp("sp_AssignSiteToUser", [
+      { name: "idSite", value: idSite, type: sql.Int },
+      { name: "idUser", value: idUser, type: sql.Int },
+    ]);
+    return result.at(0);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function dissasociateSiteToUser(idSite, idUser) {
+  try {
+    const result = await executeSp("sp_DissociateSiteToUser", [
+      { name: "idSite", value: idSite, type: sql.Int },
+      { name: "idUser", value: idUser, type: sql.Int },
     ]);
     return result.at(0);
   } catch (error) {
@@ -398,5 +267,7 @@ module.exports = {
   getTechnicians,
   getSupervisors,
   getOperators,
-  getClients
+  getClients,
+  disassignSite: dissasociateSiteToUser,
+  assignSite: assignSiteToUser 
 };

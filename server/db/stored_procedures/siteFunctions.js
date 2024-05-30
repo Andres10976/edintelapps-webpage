@@ -1,19 +1,15 @@
 const sql = require("mssql");
 const { executeSp } = require("../db");
 
-/**
- * Creates a new site.
- * @param {number} idClient - The ID of the client associated with the site.
- * @param {string} name - The name of the site.
- * @param {number} supervisor - The ID of the supervisor for the site.
- * @returns {Promise<string>} A promise that resolves to 'Site created successfully.' if successful, or rejects with an error message if unsuccessful.
- */
-async function createSite(idClient, name, supervisor) {
+async function createSite(idClient, name, supervisor, contactName = null, contactPhone = null, contactMail = null) {
   try {
     const result = await executeSp("sp_CreateSite", [
       { name: "idClient", value: idClient, type: sql.Int },
       { name: "name", value: name, type: sql.VarChar(50) },
       { name: "supervisor", value: supervisor, type: sql.Int },
+      { name: "contactName", value: contactName, type: sql.VarChar(255) },
+      { name: "contactPhone", value: contactPhone, type: sql.VarChar(20) },
+      { name: "contactMail", value: contactMail, type: sql.VarChar(255) },
     ]);
     return result.at(0);
   } catch (error) {
@@ -21,32 +17,11 @@ async function createSite(idClient, name, supervisor) {
   }
 }
 
-/**
- * Retrieves all sites.
- * @returns {Promise<Array>} A promise that resolves to an array of site objects with the following properties:
- *   - id (number): The ID of the site.
- *   - idClient (number): The ID of the client associated with the site.
- *   - ClientName (string): The name of the client associated with the site.
- *   - SupervisorName (string): The name of the supervisor for the site.
- *   - idSystem (number): The ID of the system associated with the site.
- *   - systemName (string): The name of the system associated with the site.
- */
 async function getSites() {
   const sites = await executeSp("sp_GetSites");
   return sites;
 }
 
-/**
- * Retrieves a site by its ID.
- * @param {number} id - The ID of the site.
- * @returns {Promise<Object>} A promise that resolves to a site object with the following properties:
- *   - id (number): The ID of the site.
- *   - idClient (number): The ID of the client associated with the site.
- *   - ClientName (string): The name of the client associated with the site.
- *   - SupervisorName (string): The name of the supervisor for the site.
- *   - idSystem (number): The ID of the system associated with the site.
- *   - systemName (string): The name of the system associated with the site.
- */
 async function getSiteById(id) {
   const site = await executeSp("sp_GetSiteById", [
     { name: "id", value: id, type: sql.Int },
@@ -54,17 +29,6 @@ async function getSiteById(id) {
   return site;
 }
 
-/**
- * Retrieves sites associated with a specific client.
- * @param {number} idClient - The ID of the client.
- * @returns {Promise<Array>} A promise that resolves to an array of site objects with the following properties:
- *   - id (number): The ID of the site.
- *   - idClient (number): The ID of the client associated with the site.
- *   - ClientName (string): The name of the client associated with the site.
- *   - SupervisorName (string): The name of the supervisor for the site.
- *   - idSystem (number): The ID of the system associated with the site.
- *   - systemName (string): The name of the system associated with the site.
- */
 async function getSitesPerClient(idClient) {
   const sites = await executeSp("sp_GetSitesPerClient", [
     { name: "idClient", value: idClient, type: sql.Int },
@@ -72,21 +36,30 @@ async function getSitesPerClient(idClient) {
   return sites;
 }
 
-/**
- * Updates a site.
- * @param {number} id - The ID of the site to update.
- * @param {string} name - The updated name of the site.
- * @param {number} supervisor - The updated ID of the supervisor for the site.
- * @param {number} idClient - The ID of the client to update.
- * @returns {Promise<string>} A promise that resolves to 'Site updated successfully.' if successful, or rejects with an error message if unsuccessful.
- */
-async function updateSite(id, name, supervisor, idClient) {
+async function getSitesPerClientUser(idUser) {
+  const sites = await executeSp("sp_GetSitesPerClientUser", [
+    { name: "idUser", value: idUser, type: sql.Int },
+  ]);
+  return sites;
+}
+
+async function getSitesByCompany(idCompany) {
+  const sites = await executeSp("sp_GetSitesByCompany", [
+    { name: "idCompany", value: idCompany, type: sql.Int },
+  ]);
+  return sites;
+}
+
+async function updateSite(id, name, supervisor, idClient, contactName = null, contactMail = null, contactPhone = null) {
   try {
     const result = await executeSp("sp_UpdateSite", [
       { name: "id", value: id, type: sql.Int },
       { name: "name", value: name, type: sql.VarChar(50) },
       { name: "supervisor", value: supervisor, type: sql.Int },
       { name: "idClient", value: idClient, type: sql.Int },
+      { name: "contactName", value: contactName, type: sql.VarChar(255) },
+      { name: "contactMail", value: contactMail, type: sql.VarChar(255) },
+      { name: "contactPhone", value: contactPhone, type: sql.VarChar(20) },
     ]);
     return result.at(0);
   } catch (error) {
@@ -94,11 +67,6 @@ async function updateSite(id, name, supervisor, idClient) {
   }
 }
 
-/**
- * Deletes a site.
- * @param {number} id - The ID of the site to delete.
- * @returns {Promise<string>} A promise that resolves to 'Site deleted successfully.' if successful, or rejects with an error message if unsuccessful.
- */
 async function deleteSite(id) {
   try {
     const result = await executeSp("sp_DeleteSite", [
@@ -110,12 +78,6 @@ async function deleteSite(id) {
   }
 }
 
-/**
- * Assigns a system to a site.
- * @param {number} idSite - The ID of the site.
- * @param {number} idSystem - The ID of the system to assign.
- * @returns {Promise<string>} A promise that resolves to 'System assigned successfully.' if successful, or rejects with an error message if unsuccessful.
- */
 async function assignSystemToSite(idSite, idSystem) {
   try {
     const result = await executeSp("sp_AssignSystemToSite", [
@@ -128,15 +90,9 @@ async function assignSystemToSite(idSite, idSystem) {
   }
 }
 
-/**
- * Disassociates a system from a site.
- * @param {number} idSite - The ID of the site.
- * @param {number} idSystem - The ID of the system to disassociate.
- * @returns {Promise<string>} A promise that resolves to 'System disassociated successfully.' if successful, or rejects with an error message if unsuccessful.
- */
-async function disassociateSiteToSystem(idSite, idSystem) {
+async function dissociateSiteToSystem(idSite, idSystem) {
   try {
-    const result = await executeSp("sp_DisassociateSiteToSystem", [
+    const result = await executeSp("sp_DissociateSiteToSystem", [
       { name: "idSite", value: idSite, type: sql.Int },
       { name: "idSystem", value: idSystem, type: sql.SmallInt },
     ]);
@@ -151,8 +107,10 @@ module.exports = {
   getAll: getSites,
   getById: getSiteById,
   getByClient: getSitesPerClient,
+  getbyCompany: getSitesByCompany,
   update: updateSite,
   delete: deleteSite,
   assignSystem: assignSystemToSite,
-  disassociateSystem: disassociateSiteToSystem,
+  dissociateSystem: dissociateSiteToSystem,
+  getByClientUser: getSitesPerClientUser
 };
