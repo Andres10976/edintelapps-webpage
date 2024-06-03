@@ -929,7 +929,10 @@ function RequestPage() {
             <DialogContent>
               <Box mb={2}>
                 <Typography>
-                  <strong>Cliente:</strong> {selectedRequest.clientName}
+                  <strong>Compañía:</strong> {selectedRequest.companyName}
+                </Typography>
+                <Typography>
+                  <strong>Edificio:</strong> {selectedRequest.clientName}
                 </Typography>
                 <Typography>
                   <strong>Sitio:</strong> {selectedRequest.siteName}

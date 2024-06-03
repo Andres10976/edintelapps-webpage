@@ -392,7 +392,7 @@ const isUserFormButtonDisabled = () => {
           </Typography>
           {selectedUser?.roleId === 5 && (
             <Typography>
-              <strong>Cliente:</strong> {getClientName(selectedUser?.clientId)}
+              <strong>Edificio:</strong> {getClientName(selectedUser?.clientId)}
             </Typography>
           )}
           {(selectedUser?.roleId === 5 && selectedUser?.siteId) && (
