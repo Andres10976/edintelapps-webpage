@@ -13,11 +13,11 @@ router.post("/", authenticateRole(2), async (req, res) => {
   try {
     const {
       name,
-      idCompany
+      companyId
     } = req.body;
     const result = await clientFunctions.create(
       name,
-      idCompany
+      companyId
     );
     res.status(201).json({ message: result.message });
   } catch (error) {
@@ -59,12 +59,12 @@ router.put("/:id", authenticateRole(2, 3), async (req, res) => {
     const { id } = req.params;
     const {
       name,
-      idCompany
+      companyId
     } = req.body;
     const result = await clientFunctions.update(
       id,
       name,
-      idCompany
+      companyId
     );
     res.status(200).json({ message: result.message });
   } catch (error) {

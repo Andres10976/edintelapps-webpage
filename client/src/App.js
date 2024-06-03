@@ -13,6 +13,7 @@ import UsersPage from "./components/UsersPage";
 import RequestsPage from "./components/RequestsPage";
 import ClientPage from "./components/ClientPage";
 import ResetPasswordPage from "./components/ResetPasswordPage";
+import CompanyPage from "./components/CompanyPage"
 import { Navigate } from "react-router-dom";
 import SitesPage from "./components/SitesPage";
 import { ThemeProvider } from "@mui/material/styles";
@@ -98,6 +99,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={[1, 2, 3, 5]}>
                 <SitesPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/companies"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 3, 5]}>
+                <CompanyPage />
               </PrivateRoute>
             }
           />

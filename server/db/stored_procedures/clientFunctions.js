@@ -50,7 +50,7 @@ async function updateClient(clientId, name, idCompany) {
     const result = await executeSp('sp_UpdateClient', [
       { name: 'clientId', value: clientId, type: sql.Int },
       { name: 'name', value: name, type: sql.VarChar(50) },
-      { name: 'idCompany', value: idCompany, type: sql.Int },
+      { name: 'companyId', value: idCompany, type: sql.Int },
     ]);
     return result.at(0);
   } catch (error) {

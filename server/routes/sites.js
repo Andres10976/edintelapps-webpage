@@ -167,7 +167,7 @@ router.put(
       const result = await siteFunctions.dissociateSystem(id, idSystem);
       res.json({ message: result.message });
     } catch (error) {
-      console.error("Disassociate system from site error:", error);
+      console.error("Dissociate system from site error:", error);
       res.status(500).json({ message: error.message });
     }
   }

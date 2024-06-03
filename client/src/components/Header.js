@@ -101,7 +101,12 @@ const Header = () => {
         route: "/home",
       },
       {
-        label: "Clientes",
+        label: "Empresas",
+        visible: roleId === 1 || roleId === 2 || roleId === 3,
+        route: "/companies",
+      },
+      {
+        label: "Edificios",
         visible: roleId === 1 || roleId === 2 || roleId === 3,
         route: "/clients",
       },

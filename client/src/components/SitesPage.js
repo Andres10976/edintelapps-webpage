@@ -46,9 +46,13 @@ function SitesPage() {
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
   const [openSiteForm, setOpenSiteForm] = useState(false);
   const [siteForm, setSiteForm] = useState({
+    idCompany: "",
     idClient: "",
     name: "",
     supervisor: "",
+    contactName: "",
+    contactMail: "",
+    contactPhone: "",
   });
   const [supervisors, setSupervisors] = useState([]);
   const [clients, setClients] = useState([]);
@@ -59,12 +63,15 @@ function SitesPage() {
   const [messageDialogContent, setMessageDialogContent] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState("");
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
 
   useEffect(() => {
     getRoleFromToken();
     fetchSites();
+    fetchCompanies();
   }, []);
-  
+
   useEffect(() => {
     if (roleId !== 5 && roleId !== null) {
       fetchSupervisors();
@@ -111,6 +118,11 @@ function SitesPage() {
               site.idSystem && site.systemName
                 ? [{ id: site.idSystem, name: site.systemName }]
                 : [],
+            idCompany: site.idCompany,
+            companyName: site.companyName,
+            contactName: site.contactName,
+            contactMail: site.contactMail,
+            contactPhone: site.contactPhone,
           });
         }
         return acc;
@@ -125,17 +137,13 @@ function SitesPage() {
     }
   };
 
-  const fetchSupervisors = async () => {
+  const fetchCompanies = async () => {
     try {
-      const response = await axiosInstance.get("/users");
-      const supervisorUsers = response.data.filter((user) => user.roleId === 3);
-      setSupervisors(supervisorUsers);
+      const response = await axiosInstance.get("/companies");
+      setCompanies(response.data);
     } catch (error) {
-      console.error("Error fetching supervisors:", error);
-      if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al obtener los supervisores. Por favor, intente nuevamente.");
-        setErrorDialogOpen(true);
-      }
+      console.error("Error fetching companies:", error);
+      // Handle error
     }
   };
 
@@ -145,8 +153,19 @@ function SitesPage() {
       setClients(response.data);
     } catch (error) {
       console.error("Error fetching clients:", error);
+      // Handle error
+    }
+  };
+
+  const fetchSupervisors = async () => {
+    try {
+      const response = await axiosInstance.get("/users");
+      const supervisorUsers = response.data.filter((user) => user.roleId === 3);
+      setSupervisors(supervisorUsers);
+    } catch (error) {
+      console.error("Error fetching supervisors:", error);
       if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al obtener los clientes. Por favor, intente nuevamente.");
+        setErrorDialogContent(error.response.data.message || "Error al obtener los supervisores. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
     }
@@ -170,13 +189,32 @@ function SitesPage() {
     setOpenSiteDialog(true);
   };
 
+  const handleCloseSiteForm = () => {
+    setSelectedCompany(null); // Clear the selected company
+    setOpenSiteForm(false);
+    setSiteForm({
+      idCompany: "",
+      idClient: "",
+      name: "",
+      supervisor: "",
+      contactName: "",
+      contactMail: "",
+      contactPhone: "",
+    }); // Reset the form fields
+    setSelectedSystems([]);
+  };
+
   const handleEditSite = (site) => {
     setSelectedSite(site);
     setSiteForm({
       idClient: site.idClient,
       name: site.name,
       supervisor: site.SupervisorId,
+      contactName: site.contactName,
+      contactMail: site.contactMail,
+      contactPhone: site.contactPhone,
     });
+    setSelectedCompany(companies.find((company) => company.id === site.idCompany));
     setSelectedSystems(site.systems || []);
     setOpenSiteForm(true);
   };
@@ -211,6 +249,9 @@ function SitesPage() {
           name: siteForm.name,
           idClient: siteForm.idClient,
           supervisor: siteForm.supervisor,
+          contactName: siteForm.contactName,
+          contactMail: siteForm.contactMail,
+          contactPhone: siteForm.contactPhone,
         });
 
         // Assign selected systems to the site
@@ -228,13 +269,24 @@ function SitesPage() {
           }
         }
       } else {
-        response = await axiosInstance.post("/sites", siteForm);
+        response = await axiosInstance.post("/sites", {
+          ...siteForm,
+          idCompany: selectedCompany?.id,
+          contactName: siteForm.contactName,
+          contactMail: siteForm.contactMail,
+          contactPhone: siteForm.contactPhone,
+        });
       }
       setOpenSiteForm(false);
       setSiteForm({
+        idCompany: "",
         idClient: "",
         name: "",
         supervisor: "",
+        contactName: "",
+        contactMail: "",
+        contactPhone: "",
+
       });
       setSelectedSystems([]);
       fetchSites();
@@ -265,7 +317,7 @@ function SitesPage() {
 
   const disassociateSystemFromSite = async (idSystem) => {
     try {
-      await axiosInstance.put(`/sites/${selectedSite.id}/systems/disassociate`, {
+      await axiosInstance.put(`/sites/${selectedSite.id}/systems/dissociate`, {
         idSystem,
       });
     } catch (error) {
@@ -277,20 +329,47 @@ function SitesPage() {
     }
   };
 
- const filterSites = () => {
-  return sites
-    .filter((site) => {
-      const { name, clientName, SupervisorName, systems } = site;
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      return (
-        (name && name.toLowerCase().includes(lowerCaseQuery)) ||
-        (clientName && clientName.toLowerCase().includes(lowerCaseQuery)) ||
-        (SupervisorName && SupervisorName.toLowerCase().includes(lowerCaseQuery)) ||
-        systems.some(system => system.name && system.name.toLowerCase().includes(lowerCaseQuery))
-      );
-    })
-    .sort((a, b) => a.name.localeCompare(b.name)); // Add this line to sort the sites by name
-};
+
+
+
+  const isEmailValid = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return (email === "" || email === undefined || email === null || emailRegex.test(email));
+  };
+
+  const isPhoneValid = (phone) => {
+    const phoneRegex = /^\d{8}$/;
+    return (phone === "" || phone === undefined || phone === null || phoneRegex.test(phone));
+  };
+
+  const isFormValid = () => {
+    return (
+      siteForm.name.trim() !== "" &&
+      siteForm.idClient !== "" &&
+      siteForm.supervisor !== "" &&
+      (isEmailValid(siteForm.contactMail) || siteForm.contactMail === "") &&
+      isPhoneValid(siteForm.contactPhone)
+    );
+  };
+
+  const filterSites = () => {
+    return sites
+      .filter((site) => {
+        const { name, clientName, SupervisorName, systems, companyName, contactName, contactMail, contactPhone } = site;
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        return (
+          (name && name.toLowerCase().includes(lowerCaseQuery)) ||
+          (clientName && clientName.toLowerCase().includes(lowerCaseQuery)) ||
+          (SupervisorName && SupervisorName.toLowerCase().includes(lowerCaseQuery)) ||
+          (Array.isArray(systems) && systems.some(system => system.name && system.name.toLowerCase().includes(lowerCaseQuery))) ||
+          (companyName && companyName.toLowerCase().includes(lowerCaseQuery)) ||
+          (contactName && contactName.toLowerCase().includes(lowerCaseQuery)) ||
+          (contactMail && contactMail.toLowerCase().includes(lowerCaseQuery)) ||
+          (contactPhone && contactPhone.toLowerCase().includes(lowerCaseQuery))
+        );
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  };
 
   return (
     <SitesContainer>
@@ -338,7 +417,10 @@ function SitesPage() {
                 <CardContent>
                   <Typography variant="h6">{site.name}</Typography>
                   <Typography color="textSecondary">
-                    Cliente: {site.clientName}
+                    Compañía: {site.companyName}
+                  </Typography>
+                  <Typography color="textSecondary">
+                    Edificio: {site.clientName}
                   </Typography>
                   <Typography color="textSecondary">
                     Supervisor: {site.SupervisorName}
@@ -354,16 +436,16 @@ function SitesPage() {
                   </Button>
                   {canEditRequest && (
                     <>
-                    <Button size="small" onClick={() => handleEditSite(site)}>
-                      Editar
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteSite(site)}
-                    >
-                      Eliminar
-                    </Button>
+                      <Button size="small" onClick={() => handleEditSite(site)}>
+                        Editar
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteSite(site)}
+                      >
+                        Eliminar
+                      </Button>
                     </>
                   )}
                 </CardActions>
@@ -381,10 +463,22 @@ function SitesPage() {
             <strong>Nombre:</strong> {selectedSite?.name}
           </Typography>
           <Typography>
-            <strong>Cliente:</strong> {selectedSite?.clientName}
+            <strong>Compañía:</strong> {selectedSite?.companyName}
+          </Typography>
+          <Typography>
+            <strong>Edificio:</strong> {selectedSite?.clientName}
           </Typography>
           <Typography>
             <strong>Supervisor:</strong> {selectedSite?.SupervisorName}
+          </Typography>
+          <Typography>
+            <strong>Nombre de contacto:</strong> {selectedSite?.contactName}
+          </Typography>
+          <Typography>
+            <strong>Correo electrónico de contacto:</strong> {selectedSite?.contactMail}
+          </Typography>
+          <Typography>
+            <strong>Teléfono de contacto:</strong> {selectedSite?.contactPhone}
           </Typography>
           <Typography>
             <strong>Sistemas:</strong>{" "}
@@ -394,28 +488,48 @@ function SitesPage() {
       </Dialog>
 
       {/* Site Form Dialog */}
-      <Dialog open={openSiteForm} onClose={() => setOpenSiteForm(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openSiteForm} onClose={handleCloseSiteForm} maxWidth="sm" fullWidth>
         <DialogTitle>
           {selectedSite ? "Editar sitio" : "Crear nuevo sitio"}
         </DialogTitle>
         <DialogContent>
           <Autocomplete
             fullWidth
-            options={clients}
-            getOptionLabel={(client) => client.name}
+            options={companies}
+            getOptionLabel={(company) => company.name}
             renderInput={(params) => (
-              <TextField {...params} label="Cliente" margin="normal" required />
+              <TextField {...params} label="Compañía" margin="normal" required />
             )}
-            value={
-              clients.find((client) => client.id === siteForm.idClient) || null
-            }
+            value={selectedCompany}
             onChange={(event, newValue) => {
+              setSelectedCompany(newValue);
               setSiteForm((prevForm) => ({
                 ...prevForm,
-                idClient: newValue ? newValue.id : "",
+                idCompany: "",
+                idClient: "", // Reset the selected client when changing the company
               }));
             }}
           />
+
+          {selectedCompany && (
+            <Autocomplete
+              fullWidth
+              options={clients.filter((client) => client.companyId === selectedCompany?.id)}
+              getOptionLabel={(client) => client.name}
+              renderInput={(params) => (
+                <TextField {...params} label="Edificio" margin="normal" required />
+              )}
+              value={
+                clients.find((client) => client.id === siteForm.idClient) || null
+              }
+              onChange={(event, newValue) => {
+                setSiteForm((prevForm) => ({
+                  ...prevForm,
+                  idClient: newValue ? newValue.id : "",
+                }));
+              }}
+            />
+          )}
           <TextField
             fullWidth
             margin="normal"
@@ -452,6 +566,32 @@ function SitesPage() {
             }}
             isOptionEqualToValue={(option, value) => option.id === value.id}
           />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Nombre de contacto"
+            name="contactName"
+            value={siteForm.contactName}
+            onChange={(e) => setSiteForm({ ...siteForm, contactName: e.target.value })}
+          />
+
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Correo electrónico de contacto"
+            name="contactMail"
+            value={siteForm.contactMail}
+            onChange={(e) => setSiteForm({ ...siteForm, contactMail: e.target.value })}
+          />
+
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Teléfono de contacto"
+            name="contactPhone"
+            value={siteForm.contactPhone}
+            onChange={(e) => setSiteForm({ ...siteForm, contactPhone: e.target.value })}
+          />
           {selectedSite && ( // Add this condition
             <Autocomplete
               multiple
@@ -478,7 +618,11 @@ function SitesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenSiteForm(false)}>Cancelar</Button>
-          <Button onClick={handleSiteFormSubmit} color="primary">
+          <Button
+            onClick={handleSiteFormSubmit}
+            color="primary"
+            disabled={!isFormValid()}
+          >
             {selectedSite ? "Actualizar" : "Crear"}
           </Button>
         </DialogActions>

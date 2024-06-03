@@ -2,8 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { register, login, logout, resetPassword, forgotPassword, authenticateRole } = require('./auth');
 require('dotenv').config();
-const sendEmail = require('./utils/mailHelper');
-const crypto = require("crypto"); //Para pruebas de correo
 const corsOptions = {
   origin: '*', // Only allow requests from your frontend
   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
@@ -16,6 +14,7 @@ const sitesRouter = require('./routes/sites');
 const systemsRouter = require('./routes/systems');
 const usersRouter = require('./routes/users');
 const techniciansRouter = require('./routes/technicians');
+const companyRouter = require('./routes/company');
 
 const app = express();
 app.use(express.json());
@@ -35,6 +34,7 @@ app.use('/sites', sitesRouter);
 app.use('/systems', systemsRouter);
 app.use('/users', usersRouter);
 app.use('/technicians', techniciansRouter);
+app.use('/companies', companyRouter)
 
 // Start the server
 app.listen(3000, () => {

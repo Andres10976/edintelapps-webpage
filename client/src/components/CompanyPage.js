@@ -1,4 +1,4 @@
-// ClientPage.js
+// CompanyPage.js
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -12,73 +12,46 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
 } from "@mui/material";
 import Header from "./Header";
 import axiosInstance from "../axiosInstance";
 import { jwtDecode } from "jwt-decode";
-import {CustomCard, CustomMain, CustomContainer} from "./styledComponents"
+import { CustomCard, CustomMain, CustomContainer } from "./styledComponents";
 import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-function ClientPage() {
-  const [buildings, setBuildings] = useState([]);
+function CompanyPage() {
+  const [companies, setCompanies] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState(false);
   const [roleId, setRoleId] = useState(null);
-  const [newBuilding, setNewBuilding] = useState({
+  const [newCompany, setNewCompany] = useState({
     name: "",
-    companyId: "",
   });
-  const [companies, setCompanies] = useState([]);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageDialogContent, setMessageDialogContent] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState("");
-  
 
   useEffect(() => {
-    fetchBuildings();
-    getRoleFromToken();
     fetchCompanies();
+    getRoleFromToken();
   }, []);
-
-  const fetchBuildings = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const decodedToken = jwtDecode(token);
-        if (decodedToken.roleId === 5) {
-          const response = await axiosInstance.get(`/clients/${decodedToken.clientId}`);
-          setBuildings([response.data]);
-        } else {
-          const response = await axiosInstance.get("/clients");
-          const sortedBuildings = response.data.sort((a, b) =>
-            a.name.localeCompare(b.name)
-          );
-          setBuildings(sortedBuildings);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching buildings:", error);
-      if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al obtener los edificios. Por favor, intente nuevamente.");
-        setErrorDialogOpen(true);
-      }
-    }
-  };
 
   const fetchCompanies = async () => {
     try {
       const response = await axiosInstance.get("/companies");
-      setCompanies(response.data);
+      const sortedCompanies = response.data.sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      setCompanies(sortedCompanies);
     } catch (error) {
       console.error("Error fetching companies:", error);
       if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al obtener las empresas. Por favor, intente nuevamente.");
+        setErrorDialogContent(error.response.data.message || "Error al obtener las compañías. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
     }
@@ -92,25 +65,23 @@ function ClientPage() {
     }
   };
 
-  const filteredBuildings = buildings.filter((building) => {
-    const { name } = building;
+  const filteredCompanies = companies.filter((company) => {
+    const { name } = company;
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
-    return (
-      name.toLowerCase().includes(lowerCaseSearchTerm)
-    );
+    return name.toLowerCase().includes(lowerCaseSearchTerm);
   });
 
-  const handleBuildingClick = (building) => {
-    setSelectedBuilding(building);
+  const handleCompanyClick = (company) => {
+    setSelectedCompany(company);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
-    setSelectedBuilding(null);
+    setSelectedCompany(null);
     setOpenDialog(false);
   };
 
-  const handleCreateBuilding = () => {
+  const handleCreateCompany = () => {
     setOpenCreateDialog(true);
   };
 
@@ -120,65 +91,62 @@ function ClientPage() {
 
   const handleCloseCreateDialog = () => {
     setOpenCreateDialog(false);
-    setSelectedBuilding(null);
-    setNewBuilding({
+    setSelectedCompany(null);
+    setNewCompany({
       name: "",
-      companyId: "",
     });
   };
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setNewBuilding((prevBuilding) => ({
-      ...prevBuilding,
+    setNewCompany((prevCompany) => ({
+      ...prevCompany,
       [name]: value,
     }));
   };
 
-  const handleDeleteBuilding = async () => {
+  const handleDeleteCompany = async () => {
     try {
-      const response = await axiosInstance.delete(`/clients/${selectedBuilding.id}`);
-      fetchBuildings();
+      const response = await axiosInstance.delete(`/companies/${selectedCompany.id}`);
+      fetchCompanies();
       handleCloseDialog();
       setOpenConfirmationDialog(false);
       setMessageDialogContent(response.data.message);
       setMessageDialogOpen(true);
     } catch (error) {
-      console.error("Error deleting building:", error);
+      console.error("Error deleting company:", error);
       if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al eliminar el edificio. Por favor, intente nuevamente.");
+        setErrorDialogContent(error.response.data.message || "Error al eliminar la compañía. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
     }
   };
 
   const isCreateButtonDisabled = () => {
-    const { name, companyId } = newBuilding;
-    return (
-      name.trim().length < 2 || !companyId
-    );
+    const { name } = newCompany;
+    return name.trim().length < 2;
   };
 
   const handleCreateSubmit = async () => {
     try {
-      const response = await axiosInstance.post("/clients", newBuilding);
-      fetchBuildings();
+      const response = await axiosInstance.post("/companies", newCompany);
+      fetchCompanies();
       handleCloseCreateDialog();
       setMessageDialogContent(response.data.message);
       setMessageDialogOpen(true);
     } catch (error) {
-      console.error("Error creating building:", error);
+      console.error("Error creating company:", error);
       if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al crear el edificio. Por favor, intente nuevamente.");
+        setErrorDialogContent(error.response.data.message || "Error al crear la compañía. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
     }
   };
 
-  const canEditBuilding = [1, 2, 3].includes(roleId);
+  const canEditCompany = [1, 2, 3].includes(roleId);
 
-  const handleEditBuilding = (building) => {
-    setSelectedBuilding(building);
+  const handleEditCompany = (company) => {
+    setSelectedCompany(company);
     setOpenCreateDialog(true);
   };
 
@@ -187,7 +155,7 @@ function ClientPage() {
       <Header />
       <CustomMain>
         <Typography variant="h4" component="h1" gutterBottom>
-          Edificios
+          Compañías
         </Typography>
         <Box
           display="flex"
@@ -195,14 +163,14 @@ function ClientPage() {
           alignItems="center"
           mb={2}
         >
-          {canEditBuilding && (
+          {canEditCompany && (
             <>
               <Button
                 variant="contained"
                 color="primary"
-                onClick={handleCreateBuilding}
+                onClick={handleCreateCompany}
               >
-                Crear edificio
+                Crear compañía
               </Button>
             </>
           )}
@@ -214,26 +182,26 @@ function ClientPage() {
           />
         </Box>
         <Grid container spacing={2}>
-          {filteredBuildings.map((building) => (
-            <Grid item xs={12} sm={6} md={4} key={building.id}>
+          {filteredCompanies.map((company) => (
+            <Grid item xs={12} sm={6} md={4} key={company.id}>
               <CustomCard>
                 <CardContent>
-                  <Typography variant="h6">{building.name}</Typography>
+                  <Typography variant="h6">{company.name}</Typography>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" onClick={() => handleBuildingClick(building)}>
+                  <Button size="small" onClick={() => handleCompanyClick(company)}>
                     Ver detalles
                   </Button>
-                  {canEditBuilding && (
+                  {canEditCompany && (
                     <>
-                      <Button size="small" onClick={() => handleEditBuilding(building)}>
+                      <Button size="small" onClick={() => handleEditCompany(company)}>
                         Editar
                       </Button>
                       <Button
                         size="small"
                         color="error"
                         onClick={() => {
-                          setSelectedBuilding(building);
+                          setSelectedCompany(company);
                           handleDeleteConfirmation();
                         }}
                       >
@@ -247,24 +215,19 @@ function ClientPage() {
           ))}
         </Grid>
       </CustomMain>
-      {/* Building Details Dialog */}
+      {/* Company Details Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-        {selectedBuilding && (
+        {selectedCompany && (
           <>
-            <DialogTitle>{selectedBuilding.name}</DialogTitle>
-            <DialogContent>
-              <Typography>
-                Compañia: {companies.find(company => company.id === selectedBuilding.companyId)?.name}
-              </Typography>
-            </DialogContent>
+            <DialogTitle>{selectedCompany.name}</DialogTitle>
           </>
         )}
       </Dialog>
 
-      {/* Create/Edit Building Dialog */}
+      {/* Create/Edit Company Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog}>
         <DialogTitle>
-          {selectedBuilding ? "Editar edificio" : "Crear edificio"}
+          {selectedCompany ? "Editar compañía" : "Crear compañía"}
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -272,59 +235,37 @@ function ClientPage() {
             margin="normal"
             label="Nombre"
             name="name"
-            value={selectedBuilding ? selectedBuilding.name : newBuilding.name}
+            value={selectedCompany ? selectedCompany.name : newCompany.name}
             onChange={
-              selectedBuilding ? (e) =>
-                setSelectedBuilding({ ...selectedBuilding, name: e.target.value })
-              : handleInputChange
+              selectedCompany
+                ? (e) => setSelectedCompany({ ...selectedCompany, name: e.target.value })
+                : handleInputChange
             }
             required
           />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Empresa"
-            name="companyId"
-            value={selectedBuilding ? selectedBuilding.companyId : newBuilding.companyId}
-            onChange={
-              selectedBuilding ? (e) =>
-                setSelectedBuilding({ ...selectedBuilding, companyId: e.target.value })
-              : handleInputChange
-            }
-            select
-            required
-          >
-            {companies.map((company) => (
-              <MenuItem key={company.id} value={company.id}>
-                {company.name}
-              </MenuItem>
-            ))}
-          </TextField>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCreateDialog}>Cancelar</Button>
-          {selectedBuilding ? (
+          {selectedCompany ? (
             <Button
               onClick={async () => {
                 try {
                   const response = await axiosInstance.put(
-                    `/clients/${selectedBuilding.id}`,
-                    selectedBuilding
+                    `/companies/${selectedCompany.id}`,
+                    selectedCompany
                   );
-                  fetchBuildings();
+                  fetchCompanies();
                   handleCloseCreateDialog();
                   setMessageDialogContent(response.data.message);
                   setMessageDialogOpen(true);
                 } catch (error) {
-                  console.error("Error updating building:", error);
+                  console.error("Error updating company:", error);
                 }
               }}
               color="primary"
-              disabled={
-                selectedBuilding.name.trim().length < 2 || !selectedBuilding.companyId
-              }
+              disabled={selectedCompany.name.trim().length < 2}
             >
-              Actualizar edificio
+              Actualizar compañía
             </Button>
           ) : (
             <Button
@@ -332,7 +273,7 @@ function ClientPage() {
               color="primary"
               disabled={isCreateButtonDisabled()}
             >
-              Crear edificio
+              Crear compañía
             </Button>
           )}
         </DialogActions>
@@ -346,14 +287,14 @@ function ClientPage() {
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Estás seguro que deseas eliminar el edificio "{selectedBuilding?.name}"?
+            ¿Estás seguro que deseas eliminar la compañía "{selectedCompany?.name}"?
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenConfirmationDialog(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleDeleteBuilding} color="error">
+          <Button onClick={handleDeleteCompany} color="error">
             Eliminar
           </Button>
         </DialogActions>
@@ -386,4 +327,4 @@ function ClientPage() {
   );
 }
 
-export default ClientPage;
+export default CompanyPage;

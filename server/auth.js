@@ -94,13 +94,12 @@ async function login(req, res) {
       // Otherwise, assume it's a username
       user = await userFunctions.getByUsername(usernameOrEmail);
     }
-
+    
     user = Array.isArray(user) ? user.at(0) : user;
 
     if (!user) {
       return res.status(401).json({ message: "Credenciales ingresados inválidos." });
     }
-
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {

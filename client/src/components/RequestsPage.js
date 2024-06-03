@@ -46,7 +46,8 @@ function RequestPage() {
     scope: "",
     idSystem: "",
   });
-  const [clients, setClients] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
   const [selectedSystem, setSelectedSystem] = useState(null);
@@ -70,7 +71,7 @@ function RequestPage() {
   });
   const [openFinishRequestDialog, setOpenFinishRequestDialog] = useState(false);
   const [openConfirmFinish, setOpenConfirmFinish] = useState(false);
-  const [ticketFile, setTicketFile] = useState(null);
+  const [ticketFiles, setTicketFiles] = useState([]);
   const [reportFile, setReportFile] = useState(null);
   const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
   const uniqueStatuses = [...new Set(requests.map(request => request.statusName))].sort();
@@ -131,42 +132,65 @@ function RequestPage() {
           response = await axiosInstance.get("/sites");
         }
       }
-      const clientsData = response.data.reduce((acc, site) => {
-        const existingClient = acc.find(
-          (client) => client.id === site.idClient
+      const companyData = response.data.reduce((acc, site) => {
+        const existingCompany = acc.find(
+          (company) => company.id === site.idCompany
         );
-        if (existingClient) {
-          const existingSite = existingClient.sites.find(
-            (s) => s.id === site.id
+        if (existingCompany) {
+          const existingClient = existingCompany.clients.find(
+            (client) => client.id === site.idClient
           );
-          if (existingSite) {
-            existingSite.systems.push({
-              id: site.idSystem,
-              name: site.systemName,
-            });
+          if (existingClient) {
+            const existingSite = existingClient.sites.find(
+              (s) => s.id === site.id
+            );
+            if (existingSite) {
+              existingSite.systems.push({
+                id: site.idSystem,
+                name: site.systemName,
+              });
+            } else {
+              existingClient.sites.push({
+                id: site.id,
+                name: site.name,
+                systems: [{ id: site.idSystem, name: site.systemName }],
+              });
+            }
           } else {
-            existingClient.sites.push({
-              id: site.id,
-              name: site.name,
-              systems: [{ id: site.idSystem, name: site.systemName }],
+            existingCompany.clients.push({
+              id: site.idClient,
+              name: site.clientName,
+              sites: [
+                {
+                  id: site.id,
+                  name: site.name,
+                  systems: [{ id: site.idSystem, name: site.systemName }],
+                },
+              ],
             });
           }
         } else {
           acc.push({
-            id: site.idClient,
-            name: site.clientName,
-            sites: [
+            id: site.idCompany,
+            name: site.companyName,
+            clients: [
               {
-                id: site.id,
-                name: site.name,
-                systems: [{ id: site.idSystem, name: site.systemName }],
+                id: site.idClient,
+                name: site.clientName,
+                sites: [
+                  {
+                    id: site.id,
+                    name: site.name,
+                    systems: [{ id: site.idSystem, name: site.systemName }],
+                  },
+                ],
               },
             ],
           });
         }
         return acc;
       }, []);
-      setClients(clientsData);
+      setCompanies(companyData);
     } catch (error) {
       console.error("Error fetching sites:", error);
     }
@@ -248,22 +272,24 @@ function RequestPage() {
   const confirmFinishRequest = async () => {
     try {
       const formData = new FormData();
-      if (ticketFile) {
-        const ticketExtension = ticketFile.name.split('.').pop();
-        const ticketFileName = `boleta-${selectedRequest.code}.${ticketExtension}`;
-        formData.append("ticket", new File([ticketFile], ticketFileName, { type: ticketFile.type }));
+      if (ticketFiles.length > 0) {
+        ticketFiles.forEach((file) => {
+          const ticketExtension = file.name.split('.').pop();
+          const ticketFileName = `boleta-${selectedRequest.code}-${Date.now()}.${ticketExtension}`;
+          formData.append("tickets", new File([file], ticketFileName, { type: file.type }));
+        });
       }
       if (reportFile) {
         const reportExtension = reportFile.name.split('.').pop();
         const reportFileName = `reporte-${selectedRequest.code}.${reportExtension}`;
         formData.append("report", new File([reportFile], reportFileName, { type: reportFile.type }));
       }
-  
+
       const response = await axiosInstance.post(`/requests/${selectedRequest.id}/ticketAndReport`, formData);
       fetchRequests();
       setOpenFinishRequestDialog(false);
       setOpenConfirmFinish(false);
-      setTicketFile(null);
+      setTicketFiles([]);
       setReportFile(null);
       setMessageDialogContent(response.data.message);
       setMessageDialogOpen(true);
@@ -355,10 +381,10 @@ function RequestPage() {
       second: 'numeric',
       timeZone: 'America/Costa_Rica'
     };
-  
+
     const date = new Date(dateString);
     date.setHours(date.getHours() + 6);
-  
+
     return date.toLocaleDateString('es-ES', options);
   }
 
@@ -409,15 +435,22 @@ function RequestPage() {
       scope: request.scope,
       idSystem: request.idSystem,
     });
-    setSelectedClient(clients.find((client) => client.id === request.idClient));
+    setSelectedCompany(companies.find((company) => company.clients.some((client) => client.id === request.idClient)));
+    setSelectedClient(
+      companies
+        .find((company) => company.clients.some((client) => client.id === request.idClient))
+        ?.clients.find((client) => client.id === request.idClient)
+    );
     setSelectedSite(
-      clients
-        .find((client) => client.id === request.idClient)
+      companies
+        .find((company) => company.clients.some((client) => client.id === request.idClient))
+        ?.clients.find((client) => client.id === request.idClient)
         ?.sites.find((site) => site.id === request.idSite)
     );
     setSelectedSystem(
-      clients
-        .find((client) => client.id === request.idClient)
+      companies
+        .find((company) => company.clients.some((client) => client.id === request.idClient))
+        ?.clients.find((client) => client.id === request.idClient)
         ?.sites.find((site) => site.id === request.idSite)
         ?.systems.find((system) => system.id === request.idSystem)
     );
@@ -450,15 +483,18 @@ function RequestPage() {
   };
 
   const isRequestFormButtonDisabled = () => {
-    const { idSite, code, type, scope, idSystem } = requestForm;
-    let ifClientRequest = false
+    const { code, type, scope } = requestForm;
+    let ifClientRequest = false;
     if (roleId !== 5) {
-      ifClientRequest = (code?.trim()?.length ?? 0) < 2 || !type;
+      ifClientRequest = (code?.trim()?.length ?? 0) > 12 || (code?.trim()?.length ?? 0) < 8;
     }
     return (
-      !idSite ||
+      !selectedCompany ||
+      !selectedClient ||
+      !selectedSite ||
       scope.trim().length < 2 ||
-      !idSystem ||
+      !selectedSystem ||
+      !type ||
       ifClientRequest
     );
   };
@@ -574,60 +610,38 @@ function RequestPage() {
     }
   };
 
+  const handleCompanyChange = (event, value) => {
+    setSelectedCompany(value);
+    if (value && value.clients.length === 1) {
+      handleClientChange(null, value.clients[0]);
+    } else {
+      setSelectedClient(null);
+      setSelectedSite(null);
+      setSelectedSystem(null);
+    }
+  };
+
   const handleClientChange = (event, value) => {
     setSelectedClient(value);
-    setSelectedSite(null);
-    setSelectedSystem(null);
-    setRequestForm((prevForm) => ({
-      ...prevForm,
-      idSite: "",
-      idSystem: "",
-    }));
-  
     if (value && value.sites.length === 1) {
-      const site = value.sites[0];
-      setSelectedSite(site);
-      setRequestForm((prevForm) => ({
-        ...prevForm,
-        idSite: site.id,
-      }));
-  
-      if (site.systems.length === 1) {
-        const system = site.systems[0];
-        setSelectedSystem(system);
-        setRequestForm((prevForm) => ({
-          ...prevForm,
-          idSystem: system.id,
-        }));
-      }
+      handleSiteChange(null,value.sites[0]);
+    } else {
+      setSelectedSite(null);
+      setSelectedSystem(null);
     }
   };
 
   const handleSiteChange = (event, value) => {
     setSelectedSite(value);
-    setSelectedSystem(null);
-    setRequestForm((prevForm) => ({
-      ...prevForm,
-      idSite: value ? value.id : "",
-      idSystem: "",
-    }));
-  
     if (value && value.systems.length === 1) {
-      const system = value.systems[0];
-      setSelectedSystem(system);
-      setRequestForm((prevForm) => ({
-        ...prevForm,
-        idSystem: system.id,
-      }));
+      setSelectedSystem(value.systems[0]);
+    } else {
+      setSelectedSystem(null);
     }
   };
 
   const handleSystemChange = (event, value) => {
     setSelectedSystem(value);
-    setRequestForm((prevForm) => ({
-      ...prevForm,
-      idSystem: value ? value.id : "",
-    }));
   };
 
   const handleRequestTypeChange = (event, value) => {
@@ -663,15 +677,15 @@ function RequestPage() {
                   scope: "",
                   idSystem: "",
                 });
-                if (clients.length === 1) {
-                  handleClientChange(null, clients[0]);
+                if (companies.length === 1) {
+                  handleCompanyChange(null, companies[0]);
                 } else {
+                  setSelectedCompany(null);
                   setSelectedClient(null);
                   setSelectedSite(null);
                   setSelectedSystem(null);
                   setSelectedRequestType(null);
                 }
-
                 setOpenRequestForm(true);
               }}
             >
@@ -691,7 +705,7 @@ function RequestPage() {
           value={selectedStatuses}
           onChange={(event, value) => setSelectedStatuses(value)}
           renderInput={(params) => (
-            <TextField {...params} label="Estados de solicitud" margin="normal" />
+            <TextField {...params} label="Estado de solicitud" margin="normal" />
           )}
         />
         <Autocomplete
@@ -702,7 +716,7 @@ function RequestPage() {
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Type"
+              label="Tipo solicitud"
               margin="normal"
               sx={{ marginTop: 0.5, marginBotton: 0.5 }} // Add this line to reduce the top margin
             />
@@ -1012,42 +1026,38 @@ function RequestPage() {
         </DialogTitle>
         <DialogContent>
           <Autocomplete
-            options={clients}
-            getOptionLabel={(client) => client?.name || ""}
-            value={clients.length === 1 ? clients[0] : selectedClient}
-            onChange={handleClientChange}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            renderInput={(params) => (
-              <TextField {...params} label="Cliente" margin="normal" disabled={clients.length === 1} />
-            )}
-            disabled={clients.length === 1}
+            options={companies}
+            getOptionLabel={(company) => company?.name || ""}
+            value={selectedCompany}
+            onChange={handleCompanyChange}
+            isOptionEqualToValue={(option, value) => option?.id === value?.id}
+            renderInput={(params) => <TextField {...params} label="Empresa" margin="normal" />}
           />
-          {selectedClient && (
-            <Autocomplete
-              options={selectedClient.sites}
-              getOptionLabel={(site) => site?.name || ""}
-              value={selectedClient.sites.length === 1 ? selectedClient.sites[0] : selectedSite}
-              onChange={handleSiteChange}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderInput={(params) => (
-                <TextField {...params} label="Sitio" margin="normal" disabled={selectedClient.sites.length === 1} />
-              )}
-              disabled={selectedClient.sites.length === 1}
-            />
-          )}
-          {selectedSite && (
-            <Autocomplete
-              options={selectedSite.systems}
-              getOptionLabel={(system) => system?.name || ""}
-              value={selectedSite.systems.length === 1 ? selectedSite.systems[0] : selectedSystem}
-              onChange={handleSystemChange}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderInput={(params) => (
-                <TextField {...params} label="Sistema" margin="normal" disabled={selectedSite.systems.length === 1} />
-              )}
-              disabled={selectedSite.systems.length === 1}
-            />
-          )}
+          <Autocomplete
+            options={selectedCompany ? selectedCompany.clients : []}
+            getOptionLabel={(client) => client?.name || ""}
+            value={selectedClient}
+            onChange={handleClientChange}
+            isOptionEqualToValue={(option, value) => option?.id === value?.id}
+            renderInput={(params) => <TextField {...params} label="Edificio" margin="normal" />}
+          />
+          <Autocomplete
+            options={selectedClient ? selectedClient.sites : []}
+            getOptionLabel={(site) => site?.name || ""}
+            value={selectedSite}
+            onChange={handleSiteChange}
+            isOptionEqualToValue={(option, value) => option?.id === value?.id}
+            renderInput={(params) => <TextField {...params} label="Sitio" margin="normal" />}
+          />
+
+          <Autocomplete
+            options={selectedSite ? selectedSite.systems : []}
+            getOptionLabel={(system) => system?.name || ""}
+            value={selectedSystem}
+            onChange={handleSystemChange}
+            isOptionEqualToValue={(option, value) => option?.id === value?.id}
+            renderInput={(params) => <TextField {...params} label="Sistema" margin="normal" />}
+          />
           {roleId !== 5 && (
             <TextField
               fullWidth
@@ -1208,7 +1218,7 @@ function RequestPage() {
         open={openFinishRequestDialog}
         onClose={() => {
           setOpenFinishRequestDialog(false);
-          setTicketFile(null);
+          setTicketFiles([]);
           setReportFile(null);
         }}
       >
@@ -1216,12 +1226,12 @@ function RequestPage() {
         <DialogContent>
           <Typography>Por favor, sube los siguientes archivos:</Typography>
           <Box mb={1}></Box>
-          <Typography>Boleta</Typography>
+          <Typography>Boleta(s)</Typography>
           <input
             type="file"
             accept=".pdf,.xlsx,.xls,.xlsb"
-            onChange={(e) => setTicketFile(e.target.files[0])}
-            multiple={false}
+            onChange={(e) => setTicketFiles(Array.from(e.target.files))}
+            multiple={true}
           />
 
           {selectedRequest?.idType === 2 && (
@@ -1243,8 +1253,8 @@ function RequestPage() {
             onClick={() => setOpenConfirmFinish(true)}
             disabled={
               selectedRequest?.idStatus === 5
-                ? !ticketFile && !reportFile
-                : !ticketFile || (selectedRequest?.idType === 2 && !reportFile)
+                ? !ticketFiles && !reportFile
+                : !ticketFiles || (selectedRequest?.idType === 2 && !reportFile)
             }
           >
             Finalizar
