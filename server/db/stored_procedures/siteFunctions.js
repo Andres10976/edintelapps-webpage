@@ -1,7 +1,7 @@
 const sql = require("mssql");
 const { executeSp } = require("../db");
 
-async function createSite(idClient, name, supervisor, contactName = null, contactPhone = null, contactMail = null) {
+async function createSite(idClient, name, supervisor, contactName = null, contactPhone = null, contactMail = null, address = null) {
   try {
     const result = await executeSp("sp_CreateSite", [
       { name: "idClient", value: idClient, type: sql.Int },
@@ -10,6 +10,7 @@ async function createSite(idClient, name, supervisor, contactName = null, contac
       { name: "contactName", value: contactName, type: sql.VarChar(255) },
       { name: "contactPhone", value: contactPhone, type: sql.VarChar(20) },
       { name: "contactMail", value: contactMail, type: sql.VarChar(255) },
+      { name: "address", value: address, type: sql.VarChar(sql.MAX) },
     ]);
     return result.at(0);
   } catch (error) {
@@ -50,7 +51,7 @@ async function getSitesByCompany(idCompany) {
   return sites;
 }
 
-async function updateSite(id, name, supervisor, idClient, contactName = null, contactMail = null, contactPhone = null) {
+async function updateSite(id, name, supervisor, idClient, contactName = null, contactMail = null, contactPhone = null, address = null) {
   try {
     const result = await executeSp("sp_UpdateSite", [
       { name: "id", value: id, type: sql.Int },
@@ -60,6 +61,7 @@ async function updateSite(id, name, supervisor, idClient, contactName = null, co
       { name: "contactName", value: contactName, type: sql.VarChar(255) },
       { name: "contactMail", value: contactMail, type: sql.VarChar(255) },
       { name: "contactPhone", value: contactPhone, type: sql.VarChar(20) },
+      { name: "address", value: address, type: sql.VarChar(sql.MAX) },
     ]);
     return result.at(0);
   } catch (error) {

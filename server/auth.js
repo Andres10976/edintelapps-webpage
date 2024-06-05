@@ -51,7 +51,7 @@ function authenticateRole(...roles) {
  */
 async function register(req, res) {
   try {
-    const { username, password, email, name, lastname, roleId, phone } =
+    const { username, password, email, name, lastname, roleId, phone, clientId, companyId } =
       req.body;
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
@@ -63,9 +63,11 @@ async function register(req, res) {
       name,
       lastname,
       roleId,
-      phone
+      phone,
+      clientId,
+      companyId
     );
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({ message: "Usuario registrado con éxito. Credenciales de inicio de sesión enviados al correo." });
   } catch (error) {
     console.error("Register error:", error.message);
     res.status(500).json({ message: "Internal server error" });
@@ -169,7 +171,7 @@ async function forgotPassword(req, res) {
 
     // Construct the password reset link
     const resetLink = `${process.env.PAGE_URL}/reset-password-token?token=${resetToken}`;
-    // TODO:Send the password reset email
+
     const subject= 'Reinicio de contraseña. Página Edintel';
     const emailBody = `
     <html>
@@ -183,7 +185,7 @@ async function forgotPassword(req, res) {
     </html>
   `;
 
-    await sendEmail(subject, emailBody, user.email);
+    await sendEmail(subject, emailBody, [user.email]);
       
     res.json({ message: "El link para el reinicio de contraseña ha sido enviado a su correo." });
   } catch (error) {
@@ -249,7 +251,7 @@ async function resetPassword(req, res) {
     </html>
   `;
 
-    await sendEmail(subject, emailBody, singleUser.email);
+    await sendEmail(subject, emailBody, [singleUser.email]);
     res.json({ message: "Contraseña restaurada con éxito" });
   } catch (error) {
     console.error("Reset password error:", error);

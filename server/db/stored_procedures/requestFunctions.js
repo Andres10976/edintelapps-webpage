@@ -133,7 +133,7 @@ async function assignTicketAndReportPathToRequest(id, ticket = null, report = nu
   try {
     const result = await executeSp("sp_AssignTicketAndReportToRequest", [
       { name: "idRequest", value: id, type: sql.BigInt },
-      { name: "ticket", value: ticket, type: sql.VarChar(255) },
+      { name: "ticket", value: ticket, type: sql.VarChar(510) },
       { name: "report", value: report, type: sql.VarChar(255) },
     ]);
     return result.at(0);

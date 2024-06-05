@@ -113,8 +113,8 @@ router.get("/:id/requests", authenticateRole(2, 3, 5), async (req, res) => {
 router.post("/:id/sites", authenticateRole(2), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, supervisor, contactName, contactPhone, contactMail } = req.body;
-    const result = await siteFunctions.create(id, name, supervisor, contactName, contactPhone, contactMail);
+    const { name, supervisor, contactName, contactPhone, contactMail, address } = req.body;
+    const result = await siteFunctions.create(id, name, supervisor, contactName, contactPhone, contactMail, address);
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create site error:", error);
@@ -126,8 +126,8 @@ router.post("/:id/sites", authenticateRole(2), async (req, res) => {
 router.put("/:id/sites/:idSite", authenticateRole(2), async (req, res) => {
   try {
     const { id, idSite } = req.params;
-    const { name, supervisor, contactName, contactPhone, contactMail } = req.body;
-    const result = await siteFunctions.update(idSite, name, supervisor, id, contactName, contactMail, contactPhone );
+    const { name, supervisor, contactName, contactPhone, contactMail, address } = req.body;
+    const result = await siteFunctions.update(idSite, name, supervisor, id, contactName, contactMail, contactPhone, address );
     res.status(200).json({ message: result.message });
   } catch (error) {
     console.error("Site update error:", error);

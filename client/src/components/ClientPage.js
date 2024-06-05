@@ -25,7 +25,6 @@ function ClientPage() {
   const [buildings, setBuildings] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBuilding, setSelectedBuilding] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState(false);
   const [roleId, setRoleId] = useState(null);
@@ -100,16 +99,6 @@ function ClientPage() {
     );
   });
 
-  const handleBuildingClick = (building) => {
-    setSelectedBuilding(building);
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setSelectedBuilding(null);
-    setOpenDialog(false);
-  };
-
   const handleCreateBuilding = () => {
     setOpenCreateDialog(true);
   };
@@ -139,7 +128,6 @@ function ClientPage() {
     try {
       const response = await axiosInstance.delete(`/clients/${selectedBuilding.id}`);
       fetchBuildings();
-      handleCloseDialog();
       setOpenConfirmationDialog(false);
       setMessageDialogContent(response.data.message);
       setMessageDialogOpen(true);
@@ -219,11 +207,11 @@ function ClientPage() {
               <CustomCard>
                 <CardContent>
                   <Typography variant="h6">{building.name}</Typography>
+                  <Typography>
+                    {companies.find(company => company.id === building.companyId)?.name}
+                  </Typography>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" onClick={() => handleBuildingClick(building)}>
-                    Ver detalles
-                  </Button>
                   {canEditBuilding && (
                     <>
                       <Button size="small" onClick={() => handleEditBuilding(building)}>
@@ -247,19 +235,6 @@ function ClientPage() {
           ))}
         </Grid>
       </CustomMain>
-      {/* Building Details Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        {selectedBuilding && (
-          <>
-            <DialogTitle>{selectedBuilding.name}</DialogTitle>
-            <DialogContent>
-              <Typography>
-                Compañia: {companies.find(company => company.id === selectedBuilding.companyId)?.name}
-              </Typography>
-            </DialogContent>
-          </>
-        )}
-      </Dialog>
 
       {/* Create/Edit Building Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog}>

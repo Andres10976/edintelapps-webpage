@@ -178,7 +178,6 @@ router.post(
       if (!user) {
         return res.status(401).json({ message: "Contraseña ingresada incorrecta." });
       }
-
       const isPasswordValid = await bcrypt.compare(
         actualPassword,
         user.passwordHash

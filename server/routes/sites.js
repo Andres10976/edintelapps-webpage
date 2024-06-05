@@ -6,8 +6,8 @@ const router = express.Router();
 
 router.post("/", authenticateRole(2, 3), async (req, res) => {
   try {
-    const { idClient, name, supervisor, contactName, contactPhone, contactMail } = req.body;
-    const result = await siteFunctions.create(idClient, name, supervisor, contactName, contactPhone, contactMail);
+    const { idClient, name, supervisor, contactName, contactPhone, contactMail, address } = req.body;
+    const result = await siteFunctions.create(idClient, name, supervisor, contactName, contactPhone, contactMail, address);
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create site error:", error);
@@ -52,8 +52,8 @@ router.get("/user/:id", authenticateRole(2, 3, 5), async (req, res) => {
 router.put("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, idClient, supervisor, contactName, contactPhone, contactMail } = req.body;
-    const result = await siteFunctions.update(id, name, supervisor, idClient, contactName, contactPhone, contactMail);
+    const { name, idClient, supervisor, contactName, contactPhone, contactMail, address } = req.body;
+    const result = await siteFunctions.update(id, name, supervisor, idClient, contactName, contactPhone, contactMail, address);
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Update site error:", error);

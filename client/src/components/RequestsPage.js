@@ -276,7 +276,7 @@ function RequestPage() {
         ticketFiles.forEach((file) => {
           const ticketExtension = file.name.split('.').pop();
           const ticketFileName = `boleta-${selectedRequest.code}-${Date.now()}.${ticketExtension}`;
-          formData.append("tickets", new File([file], ticketFileName, { type: file.type }));
+          formData.append("ticket", new File([file], ticketFileName, { type: file.type }));
         });
       }
       if (reportFile) {
@@ -302,26 +302,54 @@ function RequestPage() {
     }
   };
 
-  const downloadFile = async (url, fileName) => {
-    try {
-      const response = await axiosInstance.get(url, { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: response.headers['content-type'] });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = fileName;
-      link.click();
-    } catch (error) {
-      console.error(`Error downloading ${fileName}:`, error);
-      if (error.response) {
-        if (error.response.status === 404) {
-          setErrorDialogContent(`${fileName} no encontrado.`);
-        } else {
-          setErrorDialogContent(error.response.data.message || `Error al descargar ${fileName}. Por favor, intente nuevamente.`);
-        }
-        setErrorDialogOpen(true);
+// path/to/your/file.js
+// Function to download a file while preserving its original extension
+const downloadFile = async (url, customName) => {
+  try {
+    // Fetch the file as a blob
+    const response = await axiosInstance.get(url, { responseType: 'blob' });
+    // Get the content disposition header
+    const contentDisposition = response.headers['content-disposition'];
+    let originalFileName = '';
+
+    // Extract the original file name from the content disposition header
+    if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
+      const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (fileNameMatch && fileNameMatch[1]) {
+        originalFileName = fileNameMatch[1];
       }
     }
-  };
+
+    // Extract the file extension from the original file name
+    const fileExtension = originalFileName.split('.').pop();
+    // Combine the custom name with the original file extension
+    const completeFileName = `${customName}.${fileExtension}`;
+
+    // Create a blob from the response data
+    const blob = new Blob([response.data], { type: response.headers['content-type'] });
+    
+    // Create a link element for downloading the file
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = completeFileName;
+    document.body.appendChild(link); // Append the link to the body
+    link.click(); // Simulate a click to trigger the download
+    document.body.removeChild(link); // Remove the link after the download
+  } catch (error) {
+    console.error(`Error downloading ${customName}:`, error);
+    // Handle error responses
+    if (error.response) {
+      if (error.response.status === 404) {
+        setErrorDialogContent(`${customName} no encontrado.`);
+      } else {
+        setErrorDialogContent(error.response.data.message || `Error al descargar ${customName}. Por favor, intente nuevamente.`);
+      }
+      setErrorDialogOpen(true);
+    }
+  }
+};
+
+  
   const confirmCloseRequest = async () => {
     try {
       const response = await axiosInstance.post(`/requests/${selectedRequest.id}/close`);
@@ -364,6 +392,7 @@ function RequestPage() {
 
   const handleAssignTechnician = (request) => {
     setSelectedRequest(request);
+    setSelectedTechnician(null);
     setOpenAssignTechnicianDialog(true);
   };
 
@@ -896,7 +925,7 @@ function RequestPage() {
           )}
           {selectedRequest && (selectedRequest.idStatus === 5 || selectedRequest.idStatus === 6) && [
             <MenuItem key="downloadTicket" onClick={() => downloadFile(`requests/${selectedRequest.id}/ticket`, `boleta-${selectedRequest.code}`)}>
-              Descargar Boleta
+              Descargar Boleta(s)
             </MenuItem>,
             selectedRequest.idType === 2 && (
               <MenuItem key="downloadReport" onClick={() => downloadFile(`requests/${selectedRequest.id}/report`, `reporte-${selectedRequest.code}`)}>
@@ -929,7 +958,7 @@ function RequestPage() {
             <DialogContent>
               <Box mb={2}>
                 <Typography>
-                  <strong>Compañía:</strong> {selectedRequest.companyName}
+                  <strong>Empresa:</strong> {selectedRequest.companyName}
                 </Typography>
                 <Typography>
                   <strong>Edificio:</strong> {selectedRequest.clientName}

@@ -4,7 +4,8 @@ const { register, login, logout, resetPassword, forgotPassword, authenticateRole
 require('dotenv').config();
 const corsOptions = {
   origin: '*', // Only allow requests from your frontend
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  exposedHeaders: ['Content-Disposition']
 };
 
 

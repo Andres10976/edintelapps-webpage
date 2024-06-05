@@ -203,7 +203,7 @@ const isUserFormButtonDisabled = () => {
         roleId: "",
         phone: "",
         clientId: null,
-        siteId: null,
+        companyId: null,
       });
       fetchUsers();
       setMessageDialogContent(response.data.message);
@@ -286,9 +286,7 @@ const isUserFormButtonDisabled = () => {
   };
 
   const getSites = (clientId) => {
-    console.log(clientId, userForm.siteId);
     const client = clients.find((client) => client.id === clientId);
-    console.log(client.sites);
     return client ? client.sites : [];
   };
 

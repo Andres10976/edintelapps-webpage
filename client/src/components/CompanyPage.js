@@ -23,8 +23,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 function CompanyPage() {
   const [companies, setCompanies] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCompany, setSelectedCompany] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState(false);
   const [roleId, setRoleId] = useState(null);
@@ -35,6 +33,9 @@ function CompanyPage() {
   const [messageDialogContent, setMessageDialogContent] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState({
+    name: "",
+  });
 
   useEffect(() => {
     fetchCompanies();
@@ -51,7 +52,7 @@ function CompanyPage() {
     } catch (error) {
       console.error("Error fetching companies:", error);
       if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al obtener las compañías. Por favor, intente nuevamente.");
+        setErrorDialogContent(error.response.data.message || "Error al obtener las empresas. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
     }
@@ -71,21 +72,12 @@ function CompanyPage() {
     return name.toLowerCase().includes(lowerCaseSearchTerm);
   });
 
-  const handleCompanyClick = (company) => {
-    setSelectedCompany(company);
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setSelectedCompany(null);
-    setOpenDialog(false);
-  };
-
   const handleCreateCompany = () => {
     setOpenCreateDialog(true);
   };
 
-  const handleDeleteConfirmation = () => {
+  const handleDeleteConfirmation = (company) => {
+    setSelectedCompany(company);
     setOpenConfirmationDialog(true);
   };
 
@@ -109,14 +101,13 @@ function CompanyPage() {
     try {
       const response = await axiosInstance.delete(`/companies/${selectedCompany.id}`);
       fetchCompanies();
-      handleCloseDialog();
       setOpenConfirmationDialog(false);
       setMessageDialogContent(response.data.message);
       setMessageDialogOpen(true);
     } catch (error) {
       console.error("Error deleting company:", error);
       if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al eliminar la compañía. Por favor, intente nuevamente.");
+        setErrorDialogContent(error.response.data.message || "Error al eliminar la empresa. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
     }
@@ -137,7 +128,7 @@ function CompanyPage() {
     } catch (error) {
       console.error("Error creating company:", error);
       if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al crear la compañía. Por favor, intente nuevamente.");
+        setErrorDialogContent(error.response.data.message || "Error al crear la empresa. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
     }
@@ -155,7 +146,7 @@ function CompanyPage() {
       <Header />
       <CustomMain>
         <Typography variant="h4" component="h1" gutterBottom>
-          Compañías
+        Empresas
         </Typography>
         <Box
           display="flex"
@@ -170,7 +161,7 @@ function CompanyPage() {
                 color="primary"
                 onClick={handleCreateCompany}
               >
-                Crear compañía
+                Crear empresa
               </Button>
             </>
           )}
@@ -189,9 +180,6 @@ function CompanyPage() {
                   <Typography variant="h6">{company.name}</Typography>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" onClick={() => handleCompanyClick(company)}>
-                    Ver detalles
-                  </Button>
                   {canEditCompany && (
                     <>
                       <Button size="small" onClick={() => handleEditCompany(company)}>
@@ -200,10 +188,7 @@ function CompanyPage() {
                       <Button
                         size="small"
                         color="error"
-                        onClick={() => {
-                          setSelectedCompany(company);
-                          handleDeleteConfirmation();
-                        }}
+                        onClick={() => handleDeleteConfirmation(company)}
                       >
                         Eliminar
                       </Button>
@@ -215,19 +200,11 @@ function CompanyPage() {
           ))}
         </Grid>
       </CustomMain>
-      {/* Company Details Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        {selectedCompany && (
-          <>
-            <DialogTitle>{selectedCompany.name}</DialogTitle>
-          </>
-        )}
-      </Dialog>
 
       {/* Create/Edit Company Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog}>
         <DialogTitle>
-          {selectedCompany ? "Editar compañía" : "Crear compañía"}
+          {selectedCompany ? "Editar empresa" : "Crear empresa"}
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -265,7 +242,7 @@ function CompanyPage() {
               color="primary"
               disabled={selectedCompany.name.trim().length < 2}
             >
-              Actualizar compañía
+              Actualizar empresa
             </Button>
           ) : (
             <Button
@@ -273,7 +250,7 @@ function CompanyPage() {
               color="primary"
               disabled={isCreateButtonDisabled()}
             >
-              Crear compañía
+              Crear empresa
             </Button>
           )}
         </DialogActions>
@@ -287,7 +264,7 @@ function CompanyPage() {
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Estás seguro que deseas eliminar la compañía "{selectedCompany?.name}"?
+            ¿Estás seguro que deseas eliminar la empresa "{selectedCompany?.name}"?
           </Typography>
         </DialogContent>
         <DialogActions>

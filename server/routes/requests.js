@@ -314,7 +314,7 @@ router.post("/:id/ticketAndReport", authenticateRole(2, 3, 4), upload.fields([{ 
   }
 });
 
-router.get("/:id/report", authenticateRole(1, 2, 3, 5), async (req, res) => {
+router.get("/:id/report", authenticateRole(1, 2, 3, 4, 5), async (req, res) => {
   try {
     const { id } = req.params;
     const result = await requestFunctions.getReportPathOfRequest(id);
@@ -330,35 +330,39 @@ router.get("/:id/report", authenticateRole(1, 2, 3, 5), async (req, res) => {
 });
 
 
-router.get("/:id/ticket", authenticateRole(1, 2, 3, 5), async (req, res) => {
+
+// Utility function to send a single ticket file
+async function sendSingleTicket(res, filePath) {
+  const fileName = path.basename(filePath);
+  const file = await fs.readFile(filePath);
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+  res.send(file);
+}
+
+// Utility function to send multiple ticket files as a zip
+function sendMultipleTickets(res, ticketPaths, requestCode) {
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="boletas-${requestCode}.zip"`);
+
+  ticketPaths.forEach(ticketPath => archive.file(ticketPath, { name: path.basename(ticketPath) }));
+  archive.pipe(res);
+  archive.finalize();
+}
+
+// Route handler to get ticket(s)
+router.get("/:id/ticket", authenticateRole(1, 2, 3, 4, 5), async (req, res) => {
   try {
     const { id } = req.params;
     const request = await requestFunctions.getById(id);
     const result = await requestFunctions.getTicketPathOfRequest(id);
+
     if (result) {
       const ticketPaths = result.ticketFilePath.split(';');
-      
-      if (ticketPaths.length === 1) {
-        // If there is only one ticket, send it directly
-        res.download(ticketPaths[0]);
-      } else {
-        // If there are multiple tickets, create a zip archive and send it
-        const archive = archiver('zip', {
-          zlib: { level: 9 } // Set the compression level (optional)
-        });
-
-        // Set the response headers for the zip file
-        res.attachment(`boletas-${request.code}.zip`);
-
-        // Add each ticket file to the archive
-        for (const ticketPath of ticketPaths) {
-          archive.file(ticketPath, { name: path.basename(ticketPath) });
-        }
-
-        // Pipe the archive to the response and finalize it
-        archive.pipe(res);
-        archive.finalize();
-      }
+      ticketPaths.length === 1
+        ? await sendSingleTicket(res, ticketPaths[0])
+        : sendMultipleTickets(res, ticketPaths, request.code);
     } else {
       res.status(404).json({ message: "Error: Boleta no encontrada" });
     }

@@ -53,6 +53,7 @@ function SitesPage() {
     contactName: "",
     contactMail: "",
     contactPhone: "",
+    address: "",
   });
   const [supervisors, setSupervisors] = useState([]);
   const [clients, setClients] = useState([]);
@@ -200,6 +201,7 @@ function SitesPage() {
       contactName: "",
       contactMail: "",
       contactPhone: "",
+      address: "",
     }); // Reset the form fields
     setSelectedSystems([]);
   };
@@ -252,6 +254,7 @@ function SitesPage() {
           contactName: siteForm.contactName,
           contactMail: siteForm.contactMail,
           contactPhone: siteForm.contactPhone,
+          address: siteForm.address,
         });
 
         // Assign selected systems to the site
@@ -275,6 +278,7 @@ function SitesPage() {
           contactName: siteForm.contactName,
           contactMail: siteForm.contactMail,
           contactPhone: siteForm.contactPhone,
+          address: siteForm.address,
         });
       }
       setOpenSiteForm(false);
@@ -286,9 +290,11 @@ function SitesPage() {
         contactName: "",
         contactMail: "",
         contactPhone: "",
+        address: "",
 
       });
       setSelectedSystems([]);
+      setSelectedCompany(null);
       fetchSites();
       setMessageDialogContent(response.data.message);
       setMessageDialogOpen(true);
@@ -329,26 +335,11 @@ function SitesPage() {
     }
   };
 
-
-
-
-  const isEmailValid = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return (email === "" || email === undefined || email === null || emailRegex.test(email));
-  };
-
-  const isPhoneValid = (phone) => {
-    const phoneRegex = /^\d{8}$/;
-    return (phone === "" || phone === undefined || phone === null || phoneRegex.test(phone));
-  };
-
   const isFormValid = () => {
     return (
       siteForm.name.trim() !== "" &&
       siteForm.idClient !== "" &&
-      siteForm.supervisor !== "" &&
-      (isEmailValid(siteForm.contactMail) || siteForm.contactMail === "") &&
-      isPhoneValid(siteForm.contactPhone)
+      siteForm.supervisor !== ""
     );
   };
 
@@ -417,7 +408,7 @@ function SitesPage() {
                 <CardContent>
                   <Typography variant="h6">{site.name}</Typography>
                   <Typography color="textSecondary">
-                    Compañía: {site.companyName}
+                    Empresa: {site.companyName}
                   </Typography>
                   <Typography color="textSecondary">
                     Edificio: {site.clientName}
@@ -463,13 +454,16 @@ function SitesPage() {
             <strong>Nombre:</strong> {selectedSite?.name}
           </Typography>
           <Typography>
-            <strong>Compañía:</strong> {selectedSite?.companyName}
+            <strong>Empresa:</strong> {selectedSite?.companyName}
           </Typography>
           <Typography>
             <strong>Edificio:</strong> {selectedSite?.clientName}
           </Typography>
           <Typography>
             <strong>Supervisor:</strong> {selectedSite?.SupervisorName}
+          </Typography>
+          <Typography>
+            <strong>Dirección:</strong> {selectedSite?.address}
           </Typography>
           <Typography>
             <strong>Nombre de contacto:</strong> {selectedSite?.contactName}
@@ -498,7 +492,7 @@ function SitesPage() {
             options={companies}
             getOptionLabel={(company) => company.name}
             renderInput={(params) => (
-              <TextField {...params} label="Compañía" margin="normal" required />
+              <TextField {...params} label="Empresa" margin="normal" required />
             )}
             value={selectedCompany}
             onChange={(event, newValue) => {
@@ -565,6 +559,14 @@ function SitesPage() {
               }));
             }}
             isOptionEqualToValue={(option, value) => option.id === value.id}
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Dirección"
+            name="address"
+            value={siteForm.address}
+            onChange={(e) => setSiteForm({ ...siteForm, address: e.target.value })}
           />
           <TextField
             fullWidth
