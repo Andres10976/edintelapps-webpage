@@ -45,6 +45,8 @@ function UsersPage() {
   const [messageDialogContent, setMessageDialogContent] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState("");
+  const [openConfirmResetPassword, setOpenConfirmResetPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -126,6 +128,7 @@ function UsersPage() {
 
   const confirmDeleteUser = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.delete(`/users/${selectedUser.id}`);
       fetchUsers();
       setOpenConfirmDelete(false);
@@ -138,12 +141,14 @@ function UsersPage() {
         setErrorDialogContent(error.response.data.message || "Error al eliminar el usuario. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
-const isUserFormButtonDisabled = () => {
+  const isUserFormButtonDisabled = () => {
     const { username, email, name, lastname, roleId, phone } = userForm;
-  
+
     return (
       !username ||
       !email ||
@@ -173,6 +178,29 @@ const isUserFormButtonDisabled = () => {
     return username.length >= 8;
   };
 
+  const handleResetPassword = (user) => {
+    setSelectedUser(user);
+    setOpenConfirmResetPassword(true);
+  };
+
+  const confirmResetPassword = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.post(`/users/${selectedUser.id}/reset-user`);
+      setOpenConfirmResetPassword(false);
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
+    } catch (error) {
+      console.error("Error resetting user password:", error);
+      if (error.response) {
+        setErrorDialogContent(error.response.data.message || "Error al reiniciar la contraseña del usuario. Por favor, intente nuevamente.");
+        setErrorDialogOpen(true);
+      }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
+    }
+  };
+
   const fetchRoles = async () => {
     try {
       const response = await axiosInstance.get("/users/roles");
@@ -188,6 +216,7 @@ const isUserFormButtonDisabled = () => {
 
   const handleUserFormSubmit = async () => {
     try {
+      setLoading(true);
       let response;
       if (selectedUser) {
         response = await axiosInstance.put(`/users/${selectedUser.id}`, userForm);
@@ -214,6 +243,8 @@ const isUserFormButtonDisabled = () => {
         setErrorDialogContent(error.response.data.message || "Error al obtener crear o actualizar el usuario. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -350,6 +381,11 @@ const isUserFormButtonDisabled = () => {
                   <Button size="small" onClick={() => handleEditUser(user)}>
                     Editar
                   </Button>
+                  {user.roleId !== 6 && (
+                    <Button size="small" onClick={() => handleResetPassword(user)}>
+                      Reiniciar contraseña
+                    </Button>
+                  )}
                   <Button
                     size="small"
                     color="error"
@@ -548,11 +584,11 @@ const isUserFormButtonDisabled = () => {
               Creado en: {formatDate(selectedUser.createdAt)}
             </Typography>
           )}
-         </DialogContent>
+        </DialogContent>
         <DialogActions>
           <Button
             onClick={handleUserFormSubmit}
-            disabled={isUserFormButtonDisabled()}
+            disabled={isUserFormButtonDisabled() || loading}
           >
             {selectedUser ? "Actualizar" : "Crear"}
           </Button>
@@ -573,7 +609,7 @@ const isUserFormButtonDisabled = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenConfirmDelete(false)}>Cancelar</Button>
-          <Button onClick={confirmDeleteUser} color="error">
+          <Button onClick={confirmDeleteUser} color="error" disabled={loading}>
             Eliminar
           </Button>
         </DialogActions>
@@ -600,6 +636,23 @@ const isUserFormButtonDisabled = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setErrorDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openConfirmResetPassword}
+        onClose={() => setOpenConfirmResetPassword(false)}
+      >
+        <DialogTitle>Confirmar reinicio de contraseña</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas reiniciar la contraseña de este usuario?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenConfirmResetPassword(false)}>Cancelar</Button>
+          <Button onClick={confirmResetPassword} color="primary" disabled={loading}>
+            Reiniciar contraseña
+          </Button>
         </DialogActions>
       </Dialog>
     </CustomContainer>

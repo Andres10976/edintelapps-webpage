@@ -66,6 +66,7 @@ function SitesPage() {
   const [errorDialogContent, setErrorDialogContent] = useState("");
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     getRoleFromToken();
@@ -228,6 +229,7 @@ function SitesPage() {
 
   const confirmDeleteSite = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.delete(`/sites/${selectedSite.id}`);
       fetchSites();
       setOpenConfirmDelete(false);
@@ -240,11 +242,14 @@ function SitesPage() {
         setErrorDialogContent(error.response.data.message || "Error al eliminar el sitio. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
   const handleSiteFormSubmit = async () => {
     try {
+      setLoading(true);
       let response;
       if (selectedSite) {
         response = await axiosInstance.put(`/sites/${selectedSite.id}`, {
@@ -259,7 +264,7 @@ function SitesPage() {
 
         // Assign selected systems to the site
         for (const system of selectedSystems) {
-          await assignSystemToSite(system.id);
+          assignSystemToSite(system.id);
         }
 
         // Disassociate unselected systems from the site
@@ -268,7 +273,7 @@ function SitesPage() {
           if (
             !selectedSystems.some((system) => system.id === existingSystem.id)
           ) {
-            await disassociateSystemFromSite(existingSystem.id);
+            disassociateSystemFromSite(existingSystem.id);
           }
         }
       } else {
@@ -304,6 +309,8 @@ function SitesPage() {
         setErrorDialogContent(error.response.data.message || "Error al crear o actualizar un sitio. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -314,10 +321,6 @@ function SitesPage() {
       });
     } catch (error) {
       console.error("Error assigning system to site:", error);
-      if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al asociar un sistema a un sitio. Por favor, intente nuevamente.");
-        setErrorDialogOpen(true);
-      }
     }
   };
 
@@ -328,10 +331,6 @@ function SitesPage() {
       });
     } catch (error) {
       console.error("Error disassociating system from site:", error);
-      if (error.response) {
-        setErrorDialogContent(error.response.data.message || "Error al desasociar un sistema a un sitio. Por favor, intente nuevamente.");
-        setErrorDialogOpen(true);
-      }
     }
   };
 
@@ -462,18 +461,26 @@ function SitesPage() {
           <Typography>
             <strong>Supervisor:</strong> {selectedSite?.SupervisorName}
           </Typography>
+          {selectedSite?.address && (
           <Typography>
             <strong>Dirección:</strong> {selectedSite?.address}
           </Typography>
+          )}
+          {selectedSite?.contactName && (
           <Typography>
             <strong>Nombre de contacto:</strong> {selectedSite?.contactName}
           </Typography>
+          )}
+          {selectedSite?.contactMail && (
           <Typography>
             <strong>Correo electrónico de contacto:</strong> {selectedSite?.contactMail}
           </Typography>
+          )}
+          {selectedSite?.contactPhone && (
           <Typography>
             <strong>Teléfono de contacto:</strong> {selectedSite?.contactPhone}
           </Typography>
+          )}
           <Typography>
             <strong>Sistemas:</strong>{" "}
             {selectedSite?.systems.map((system) => system.name).join(", ")}
@@ -623,7 +630,7 @@ function SitesPage() {
           <Button
             onClick={handleSiteFormSubmit}
             color="primary"
-            disabled={!isFormValid()}
+            disabled={!isFormValid() || loading}
           >
             {selectedSite ? "Actualizar" : "Crear"}
           </Button>
@@ -638,7 +645,7 @@ function SitesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenConfirmDelete(false)}>Cancelar</Button>
-          <Button onClick={confirmDeleteSite} color="error">
+          <Button onClick={confirmDeleteSite} color="error" disabled={loading}>
             Eliminar
           </Button>
         </DialogActions>

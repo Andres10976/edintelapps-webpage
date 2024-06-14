@@ -6,6 +6,8 @@ import { styled } from "@mui/system";
 import axiosInstance from "../axiosInstance";
 import { setAuthToken } from "../axiosInstance";
 import { jwtDecode } from "jwt-decode";
+import { InputAdornment, IconButton } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const LoginContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -47,6 +49,7 @@ function LoginPage() {
   const [error, setError] = useState("");
   const loginButtonRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -56,7 +59,7 @@ function LoginPage() {
         // Decode the token to check if it's valid
         jwtDecode(token);
         // If the token is valid, redirect to the home page
-        navigate("/home");  
+        navigate("/home");
       } catch (error) {
         // If the token is invalid, remove it from local storage
         localStorage.removeItem("token");
@@ -136,10 +139,23 @@ function LoginPage() {
               variant="outlined"
               margin="normal"
               fullWidth
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyPress={handleKeyPress}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <LoginButton
               ref={loginButtonRef}

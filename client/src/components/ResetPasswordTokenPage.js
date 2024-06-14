@@ -48,6 +48,7 @@ function ResetPasswordTokenPage() {
     const [messageDialogContent, setMessageDialogContent] = useState('');
     const [errorDialogOpen, setErrorDialogOpen] = useState(false);
     const [errorDialogContent, setErrorDialogContent] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const isValidPassword = (password) => {
         const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{8,}$/;
@@ -72,6 +73,7 @@ function ResetPasswordTokenPage() {
 
     const handleResetPassword = async () => {
         try {
+            setLoading(true);
             await axiosInstance.post('/reset-password', {
                 newPassword: newPassword,
                 token: token,
@@ -82,6 +84,8 @@ function ResetPasswordTokenPage() {
             console.error("Error resetting password:", error);
             setErrorDialogContent(error.response.data.message || 'Ocurrió un error al actualizar la contraseña.');
             setErrorDialogOpen(true);
+        } finally {
+            setLoading(false); // Set loading back to false after the API call completes
         }
     };
 
@@ -123,7 +127,7 @@ function ResetPasswordTokenPage() {
                     variant="contained"
                     color="primary"
                     onClick={handleResetPassword}
-                    disabled={!isValidPassword(newPassword) || newPassword !== confirmNewPassword}
+                    disabled={!isValidPassword(newPassword) || newPassword !== confirmNewPassword || loading}
                 >
                     Restablecer contraseña
                 </SubmitButton>

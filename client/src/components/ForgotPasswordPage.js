@@ -41,9 +41,11 @@ function ForgotPasswordPage() {
   const [messageDialogContent, setMessageDialogContent] = useState('');
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleForgotPassword = async () => {
     try {
+      setLoading(true);
       await axiosInstance.post('/forgot-password', { usernameOrEmail });
       setMessageDialogContent('Se ha enviado un enlace para restablecer la contraseña a su correo electrónico, en caso de que el correo o nombre de usuario ingresado existe.');
       setMessageDialogOpen(true);
@@ -51,6 +53,8 @@ function ForgotPasswordPage() {
       console.error("Error sending forgot password email:", error);
       setErrorDialogContent(error.response.data.message || 'Ocurrió un error al enviar el correo electrónico de restablecimiento de contraseña.');
       setErrorDialogOpen(true);
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -71,7 +75,7 @@ function ForgotPasswordPage() {
           variant="contained"
           color="primary"
           onClick={handleForgotPassword}
-          disabled={!usernameOrEmail}
+          disabled={!usernameOrEmail || loading}
         >
           Enviar enlace de restablecimiento
         </SubmitButton>

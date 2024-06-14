@@ -62,6 +62,15 @@ async function getSupervisors() {
   }
 }
 
+async function getCierres() {
+  try {
+    const result = await executeSp("sp_getCierres");
+    return result;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
 async function getOperators() {
   try {
     const result = await executeSp("sp_GetOperators");
@@ -267,6 +276,7 @@ module.exports = {
   getTechnicians,
   getSupervisors,
   getOperators,
+  getCierres,
   getClients,
   disassignSite: dissasociateSiteToUser,
   assignSite: assignSiteToUser 

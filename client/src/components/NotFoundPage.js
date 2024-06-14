@@ -39,13 +39,13 @@ function NotFoundPage() {
       <Header />
       <CenteredContent>
         <Typography variant="h4" component="h1" gutterBottom>
-          404 - Page Not Found
+          404 - Página no existe
         </Typography>
         <Typography variant="body1" align="center" gutterBottom>
-          The page you are looking for does not exist.
+          La página que estás buscando no existe.
         </Typography>
         <Button component={Link} to="/login" variant="contained" color="primary">
-          Go back
+          Ir al inicio
         </Button>
       </CenteredContent>
     </NotFoundContainer>

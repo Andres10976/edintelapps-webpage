@@ -174,16 +174,15 @@ async function forgotPassword(req, res) {
 
     const subject= 'Reinicio de contraseña. Página Edintel';
     const emailBody = `
-    <html>
-      <body>
-        <p>Has solicitado reiniciar la contraseña de tu cuenta.</p>
-        <p>Por favor, dar click en el siguiente link para completar su reinicio de contraseña:</p>
-        <p><a href="${resetLink}">Haz click aquí para reiniciar tu contraseña</a></p>
-        <p></p>
-        <p>Si no has sido tu el que lo solicitó puedes ignora este mensaje.</p>
-      </body>
-    </html>
-  `;
+<html>
+  <body>
+    <p>Has solicitado reiniciar la contraseña de tu cuenta.</p>
+    <p>Por favor, dar click en el siguiente link para completar su reinicio de contraseña:<br>
+    <a href="${resetLink}">Haz click aquí para reiniciar tu contraseña</a></p>
+    <p>Si no has sido tu el que lo solicitó puedes ignora este mensaje.</p>
+  </body>
+</html>
+`;
 
     await sendEmail(subject, emailBody, [user.email]);
       
@@ -249,7 +248,7 @@ async function resetPassword(req, res) {
         <p>En caso de no haber sido usted, comuníquese inmediatamente con Edintel.</p>
       </body>
     </html>
-  `;
+    `;
 
     await sendEmail(subject, emailBody, [singleUser.email]);
     res.json({ message: "Contraseña restaurada con éxito" });

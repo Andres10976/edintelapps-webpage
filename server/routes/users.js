@@ -44,26 +44,28 @@ router.post("/", authenticateRole(2), async (req, res) => {
       clientId
     );
 
-    const subject = "Bienvenido a Edintel";
-    //TODO: Añadir link a la página de Edintel
-    const url = process.env.PAGE_URL;
-    const body = `
-    <html>
-      <body>
-        <p>Bienvenido a Edintel.</p>
-        <p></p>
-        <p>Ahora formas parte de la página web de Edintel. En la misma, podrás encontrar toda la información que necesitas saber sobre los proyectos de los que formas parte.</p>
-        <p>Aquí tienes la información relacionada a tu cuenta para poder iniciar sesión correctamente:</p>
-        <p><strong>Nombre de usuario: </strong>${username}</p>
-        <p><strong>Correo:</strong> ${email}</p>
-        <p><strong>Contraseña:</strong> ${randomPassword}</p>
-        <p>Puedes ingresar a la aplicación utilizando este <a href="${url}">link</a>.</p>
-        <p></p>
-        <p>Muchas gracias por formar parte de la familia Edintel.</p>
-      </body>
-    </html>
-    `;
-    sendEmail(subject, body, [email]);
+    if (roleId !== 6) {
+      const subject = "Bienvenido a Edintel";
+      //TODO: Añadir link a la página de Edintel
+      const url = process.env.PAGE_URL;
+      const body = `
+<html>
+  <body>
+    <p>Bienvenido a Edintel.</p>
+    <p>Ahora formas parte de la página web de Edintel. En la misma, podrás encontrar toda la información que necesitas saber sobre los proyectos de los que formas parte.</p>
+    <p>Aquí tienes la información relacionada a tu cuenta para poder iniciar sesión correctamente:</p>
+    <p>
+      <strong>Nombre de usuario:</strong> ${username}<br>
+      <strong>Correo:</strong> ${email}<br>
+      <strong>Contraseña:</strong> ${randomPassword}
+    </p>
+    <p>Puedes ingresar a la aplicación utilizando este <a href="${url}">link</a>.</p>
+    <p>Muchas gracias por formar parte de la familia Edintel.</p>
+  </body>
+</html>
+`;
+      sendEmail(subject, body, [email]);
+    }
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Create user error:", error);
@@ -72,7 +74,7 @@ router.post("/", authenticateRole(2), async (req, res) => {
 });
 
 
-router.get("/", authenticateRole(2), async (req, res) => {
+router.get("/", authenticateRole(2, 3), async (req, res) => {
   try {
     const users = await userFunctions.getAll();
     res.json(users);
@@ -190,7 +192,7 @@ router.post(
       const newPasswordHash = await bcrypt.hash(newPassword, salt);
       await userFunctions.resetPassword(id, newPasswordHash, salt);
 
-      const subject= 'Reinicio de contraseña exitoso. Página Edintel';
+      const subject = 'Reinicio de contraseña exitoso. Página Edintel';
       const emailBody = `
       <html>
         <body>
@@ -199,8 +201,54 @@ router.post(
         </body>
       </html>
     `;
-  
+
       await sendEmail(subject, emailBody, [user.email]);
+
+      res.status(201).json({ message: "Contraseña reestablecida con éxito." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
+router.post(
+  "/:id/reset-user",
+  authenticateRole(2, 3, 4, 5),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const randomPassword = generateRandomPassword(16, true, true, true, true);
+
+      // Generate salt and hash the password
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(randomPassword, salt);
+      const user = await userFunctions.getById(id);
+
+      await userFunctions.resetPassword(id, passwordHash, salt);
+
+      if (user.roleId !== 6) {
+        const subject = "Bienvenido a Edintel";
+        //TODO: Añadir link a la página de Edintel
+        const url = process.env.PAGE_URL;
+        const body = `
+<html>
+  <body>
+    <p>Bienvenido a Edintel.</p>
+    <p>Ahora formas parte de la página web de Edintel. En la misma, podrás encontrar toda la información que necesitas saber sobre los proyectos de los que formas parte.</p>
+    <p>Aquí tienes la información relacionada a tu cuenta para poder iniciar sesión correctamente:</p>
+    <p>
+      <strong>Nombre de usuario:</strong> ${user.username}<br>
+      <strong>Correo:</strong> ${user.email}<br>
+      <strong>Contraseña:</strong> ${randomPassword}
+    </p>
+    <p>Puedes ingresar a la aplicación utilizando este <a href="${url}">link</a>.</p>
+    <p>Muchas gracias por formar parte de la familia Edintel.</p>
+  </body>
+</html>
+`;
+        sendEmail(subject, body, [user.email]);
+      }
 
       res.status(201).json({ message: "Contraseña reestablecida con éxito." });
     } catch (error) {
@@ -223,26 +271,26 @@ router.put("/:id/role", authenticateRole(2), async (req, res) => {
 });
 
 router.put("/:id/assignSite", authenticateRole(2), async (req, res) => {
-  try{
+  try {
     const { id } = req.params;
     const { idSite } = req.body;
     const result = await userFunctions.assignSite(idSite, id);
-    res.json({message: result.message});
-  } catch (error){
+    res.json({ message: result.message });
+  } catch (error) {
     console.error("Assign site to user error:", error);
-    res.status(500).json({message: error.message});
+    res.status(500).json({ message: error.message });
   }
 });
 
 router.put("/:id/dissociateSite", authenticateRole(2), async (req, res) => {
-  try{
+  try {
     const { id } = req.params;
     const { idSite } = req.body;
     const result = await userFunctions.assignSite(idSite, id);
-    res.json({message: result.message});
-  } catch (error){
+    res.json({ message: result.message });
+  } catch (error) {
     console.error("Assign site to user error:", error);
-    res.status(500).json({message: error.message});
+    res.status(500).json({ message: error.message });
   }
 });
 

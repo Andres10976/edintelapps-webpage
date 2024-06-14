@@ -18,6 +18,7 @@ function ResetPasswordPage() {
   const [messageDialogContent, setMessageDialogContent] = useState('');
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem('token');
   const decodedToken = jwtDecode(token);
@@ -46,6 +47,7 @@ function ResetPasswordPage() {
 
   const handleResetPassword = async () => {
     try {
+      setLoading(true);
       await axiosInstance.post(`/users/${userId}/reset-password`, {
         actualPassword: currentPassword,
         newPassword: newPassword,
@@ -56,6 +58,8 @@ function ResetPasswordPage() {
       console.error("Error resetting password:", error);
       setErrorDialogContent(error.response.data.message || 'Ocurrió un error al actualizar la contraseña.');
       setErrorDialogOpen(true);
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -104,7 +108,7 @@ function ResetPasswordPage() {
                 variant="contained"
                 color="primary"
                 onClick={handleResetPassword}
-                disabled={!isValidPassword(newPassword) || newPassword !== confirmNewPassword}
+                disabled={!isValidPassword(newPassword) || newPassword !== confirmNewPassword || loading}
                 style={{ marginTop: '1rem' }}
               >
                 Cambiar contraseña

@@ -74,10 +74,15 @@ function RequestPage() {
   const [ticketFiles, setTicketFiles] = useState([]);
   const [reportFile, setReportFile] = useState(null);
   const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
+  const [selectedSupervisors, setSelectedSupervisors] = useState([]);
+  const [selectedTechnicians, setSelectedTechnicians] = useState([]);
   const uniqueStatuses = [...new Set(requests.map(request => request.statusName))].sort();
   const uniqueTypes = [...new Set(requests.map(request => request.requestTypeName))].sort();
+  const uniqueSupervisors = [...new Set(requests.map(request => request.supervisorName))].filter(name => name !== null).sort();
+  const uniqueTechnicians = [...new Set(requests.map(request => request.technicianFullName))].filter(name => name !== null).sort();
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     getRoleFromToken();
@@ -228,7 +233,7 @@ function RequestPage() {
 
   const filterRequests = () => {
     const filteredRequests = requests.filter((request) => {
-      const { code, siteName, systemName, clientName, statusName, requestTypeName } = request;
+      const { code, siteName, systemName, clientName, statusName, requestTypeName, supervisorName, technicianFullName } = request;
       const lowerCaseQuery = searchQuery.toLowerCase();
       return (
         ((code && code.toLowerCase().includes(lowerCaseQuery)) ||
@@ -238,7 +243,9 @@ function RequestPage() {
           (statusName && statusName.toLowerCase().includes(lowerCaseQuery)) ||
           (requestTypeName && requestTypeName.toLowerCase().includes(lowerCaseQuery))) &&
         (selectedStatuses.length === 0 || selectedStatuses.includes(statusName)) &&
-        (selectedTypes.length === 0 || selectedTypes.includes(requestTypeName))
+        (selectedTypes.length === 0 || selectedTypes.includes(requestTypeName)) &&
+        (selectedSupervisors.length === 0 || selectedSupervisors.includes(supervisorName)) &&
+        (selectedTechnicians.length === 0 || selectedTechnicians.includes(technicianFullName))
       );
     });
 
@@ -271,6 +278,7 @@ function RequestPage() {
 
   const confirmFinishRequest = async () => {
     try {
+      setLoading(true);
       const formData = new FormData();
       if (ticketFiles.length > 0) {
         ticketFiles.forEach((file) => {
@@ -299,59 +307,62 @@ function RequestPage() {
         setErrorDialogContent(error.response.data.message || "Error al finalizar la solicitud. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
-// path/to/your/file.js
-// Function to download a file while preserving its original extension
-const downloadFile = async (url, customName) => {
-  try {
-    // Fetch the file as a blob
-    const response = await axiosInstance.get(url, { responseType: 'blob' });
-    // Get the content disposition header
-    const contentDisposition = response.headers['content-disposition'];
-    let originalFileName = '';
+  // path/to/your/file.js
+  // Function to download a file while preserving its original extension
+  const downloadFile = async (url, customName) => {
+    try {
+      // Fetch the file as a blob
+      const response = await axiosInstance.get(url, { responseType: 'blob' });
+      // Get the content disposition header
+      const contentDisposition = response.headers['content-disposition'];
+      let originalFileName = '';
 
-    // Extract the original file name from the content disposition header
-    if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
-      const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
-      if (fileNameMatch && fileNameMatch[1]) {
-        originalFileName = fileNameMatch[1];
+      // Extract the original file name from the content disposition header
+      if (contentDisposition && contentDisposition.indexOf('attachment') !== -1) {
+        const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (fileNameMatch && fileNameMatch[1]) {
+          originalFileName = fileNameMatch[1];
+        }
+      }
+
+      // Extract the file extension from the original file name
+      const fileExtension = originalFileName.split('.').pop();
+      // Combine the custom name with the original file extension
+      const completeFileName = `${customName}.${fileExtension}`;
+
+      // Create a blob from the response data
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+
+      // Create a link element for downloading the file
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = completeFileName;
+      document.body.appendChild(link); // Append the link to the body
+      link.click(); // Simulate a click to trigger the download
+      document.body.removeChild(link); // Remove the link after the download
+    } catch (error) {
+      console.error(`Error downloading ${customName}:`, error);
+      // Handle error responses
+      if (error.response) {
+        if (error.response.status === 404) {
+          setErrorDialogContent(`${customName} no encontrado.`);
+        } else {
+          setErrorDialogContent(error.response.data.message || `Error al descargar ${customName}. Por favor, intente nuevamente.`);
+        }
+        setErrorDialogOpen(true);
       }
     }
+  };
 
-    // Extract the file extension from the original file name
-    const fileExtension = originalFileName.split('.').pop();
-    // Combine the custom name with the original file extension
-    const completeFileName = `${customName}.${fileExtension}`;
 
-    // Create a blob from the response data
-    const blob = new Blob([response.data], { type: response.headers['content-type'] });
-    
-    // Create a link element for downloading the file
-    const link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = completeFileName;
-    document.body.appendChild(link); // Append the link to the body
-    link.click(); // Simulate a click to trigger the download
-    document.body.removeChild(link); // Remove the link after the download
-  } catch (error) {
-    console.error(`Error downloading ${customName}:`, error);
-    // Handle error responses
-    if (error.response) {
-      if (error.response.status === 404) {
-        setErrorDialogContent(`${customName} no encontrado.`);
-      } else {
-        setErrorDialogContent(error.response.data.message || `Error al descargar ${customName}. Por favor, intente nuevamente.`);
-      }
-      setErrorDialogOpen(true);
-    }
-  }
-};
-
-  
   const confirmCloseRequest = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.post(`/requests/${selectedRequest.id}/close`);
       fetchRequests();
       setOpenCloseConfirmation(false);
@@ -363,6 +374,8 @@ const downloadFile = async (url, customName) => {
         setErrorDialogContent(error.response.data.message || "Error al cerrar la solicitud. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -439,6 +452,7 @@ const downloadFile = async (url, customName) => {
 
   const handleAssignTechnicianSubmit = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.post(`/requests/${selectedRequest.id}/assign`, {
         idTechnician: selectedTechnician?.id,
       });
@@ -452,6 +466,8 @@ const downloadFile = async (url, customName) => {
         setErrorDialogContent(error.response.data.message || "Error al asignar técnico. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -496,6 +512,7 @@ const downloadFile = async (url, customName) => {
 
   const confirmDeleteRequest = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.delete(`/requests/${selectedRequest.id}`);
       fetchRequests();
       setOpenConfirmDelete(false);
@@ -508,6 +525,8 @@ const downloadFile = async (url, customName) => {
         setErrorDialogContent(error.response.data.message || "Error al eliminar la solicitud. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -530,6 +549,7 @@ const downloadFile = async (url, customName) => {
 
   const handleAcknowledgeRequest = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.post(`/technicians/${selectedRequest.idTechnicianAssigned}/requests/${selectedRequest.id}/acknowledge`);
       fetchRequests();
       setOpenAcknowledgeConfirmation(false);
@@ -542,11 +562,14 @@ const downloadFile = async (url, customName) => {
         setErrorDialogContent(error.response.data.message || "Error al reconocer la solicitud. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
   const handleStartRequest = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.post(`/technicians/${selectedRequest.idTechnicianAssigned}/requests/${selectedRequest.id}/start`);
       fetchRequests();
       setOpenStartConfirmation(false);
@@ -559,11 +582,14 @@ const downloadFile = async (url, customName) => {
         setErrorDialogContent(error.response.data.message || "Error al iniciar la solicitud. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
   const handleAssignDateTimeSubmit = async () => {
     try {
+      setLoading(true);
       let time;
       let date;
       if (!selectedDateTime.time) {
@@ -592,11 +618,14 @@ const downloadFile = async (url, customName) => {
         );
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
   const handleRequestFormSubmit = async () => {
     try {
+      setLoading(true);
       let response;
       if (selectedRequest) {
         response = await axiosInstance.put(`/requests/${selectedRequest.id}`, {
@@ -636,6 +665,8 @@ const downloadFile = async (url, customName) => {
         setErrorDialogContent(error.response.data.message || "Error al enviar la solicitud. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -653,7 +684,7 @@ const downloadFile = async (url, customName) => {
   const handleClientChange = (event, value) => {
     setSelectedClient(value);
     if (value && value.sites.length === 1) {
-      handleSiteChange(null,value.sites[0]);
+      handleSiteChange(null, value.sites[0]);
     } else {
       setSelectedSite(null);
       setSelectedSystem(null);
@@ -750,7 +781,24 @@ const downloadFile = async (url, customName) => {
               sx={{ marginTop: 0.5, marginBotton: 0.5 }} // Add this line to reduce the top margin
             />
           )}
-
+        />
+        <Autocomplete
+          multiple
+          options={uniqueSupervisors}
+          value={selectedSupervisors}
+          onChange={(event, value) => setSelectedSupervisors(value)}
+          renderInput={(params) => (
+            <TextField {...params} label="Supervisor" margin="normal" sx={{ marginTop: 0.5, marginBotton: 0.5 }} />
+          )}
+        />
+        <Autocomplete
+          multiple
+          options={uniqueTechnicians}
+          value={selectedTechnicians}
+          onChange={(event, value) => setSelectedTechnicians(value)}
+          renderInput={(params) => (
+            <TextField {...params} label="Técnico asignado" margin="normal" sx={{ marginTop: 0.5, marginBotton: 0.5 }} />
+          )}
         />
         <Grid container spacing={2}>
           {filterRequests().map((request) => (
@@ -1148,7 +1196,7 @@ const downloadFile = async (url, customName) => {
           <Button onClick={() => setOpenRequestForm(false)}>Cancelar</Button>
           <Button
             onClick={handleRequestFormSubmit}
-            disabled={isRequestFormButtonDisabled()}
+            disabled={isRequestFormButtonDisabled() || loading}
           >
             {selectedRequest ? "Actualizar" : "Crear"}
           </Button>
@@ -1169,7 +1217,7 @@ const downloadFile = async (url, customName) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenConfirmDelete(false)}>Cancelar</Button>
-          <Button onClick={confirmDeleteRequest} color="error">
+          <Button onClick={confirmDeleteRequest} color="error" disabled={loading}>
             Eliminar
           </Button>
         </DialogActions>
@@ -1203,7 +1251,7 @@ const downloadFile = async (url, customName) => {
           <Button onClick={() => setOpenAssignTechnicianDialog(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleAssignTechnicianSubmit}>Asignar</Button>
+          <Button onClick={handleAssignTechnicianSubmit} disabled={loading}>Asignar</Button>
         </DialogActions>
       </Dialog>
       <Dialog
@@ -1219,7 +1267,7 @@ const downloadFile = async (url, customName) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenAcknowledgeConfirmation(false)}>Cancelar</Button>
-          <Button onClick={handleAcknowledgeRequest} color="primary">
+          <Button onClick={handleAcknowledgeRequest} color="primary" disabled={loading}>
             Reconocer
           </Button>
         </DialogActions>
@@ -1239,7 +1287,7 @@ const downloadFile = async (url, customName) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenStartConfirmation(false)}>Cancelar</Button>
-          <Button onClick={handleStartRequest} color="primary">
+          <Button onClick={handleStartRequest} color="primary" disabled={loading}>
             Iniciar
           </Button>
         </DialogActions>
@@ -1254,7 +1302,7 @@ const downloadFile = async (url, customName) => {
           setReportFile(null);
         }}
       >
-        <DialogTitle>Finalizar Solicitud</DialogTitle>
+        <DialogTitle>{selectedRequest?.idStatus === 5 ? "Resubir archivos" : "Finalizar Solicitud"}</DialogTitle>
         <DialogContent>
           <Typography>Por favor, sube los siguientes archivos:</Typography>
           <Box mb={1}></Box>
@@ -1285,26 +1333,28 @@ const downloadFile = async (url, customName) => {
             onClick={() => setOpenConfirmFinish(true)}
             disabled={
               selectedRequest?.idStatus === 5
-                ? !ticketFiles && !reportFile
-                : !ticketFiles || (selectedRequest?.idType === 2 && !reportFile)
+                ? !(ticketFiles?.length > 0 || reportFile)
+                : selectedRequest?.idType === 2
+                  ? !(ticketFiles?.length > 0 && reportFile)
+                  : ticketFiles?.length === 0
             }
           >
-            Finalizar
+            {selectedRequest?.idStatus === 5 ? "Resubir archivos" : "Finalizar"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Confirm Finish Dialog */}
       <Dialog open={openConfirmFinish} onClose={() => setOpenConfirmFinish(false)}>
-        <DialogTitle>Confirmar finalización</DialogTitle>
+        <DialogTitle>{selectedRequest?.idStatus === 5 ? "Resubir archivos" : "Confirmar finalización"}</DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Estás seguro de que deseas finalizar la solicitud "{selectedRequest?.code}"?
+            {selectedRequest?.idStatus === 5 ? `¿Estás seguro de que deseas resubir los archicos de la solicitud "${selectedRequest?.code}"?` : `¿Estás seguro de que deseas finalizar la solicitud "${selectedRequest?.code}"?`}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenConfirmFinish(false)}>Cancelar</Button>
-          <Button onClick={confirmFinishRequest} color="primary">
+          <Button onClick={confirmFinishRequest} color="primary" disabled={loading}>
             Finalizar
           </Button>
         </DialogActions>
@@ -1320,7 +1370,7 @@ const downloadFile = async (url, customName) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCloseConfirmation(false)}>Cancelar</Button>
-          <Button onClick={confirmCloseRequest} color="primary">
+          <Button onClick={confirmCloseRequest} color="primary" disabled={loading}>
             Cerrar
           </Button>
         </DialogActions>
@@ -1369,7 +1419,7 @@ const downloadFile = async (url, customName) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenAssignDateTimeDialog(false)}>Cancelar</Button>
-          <Button onClick={handleAssignDateTimeSubmit} disabled={!selectedDateTime.date}>
+          <Button onClick={handleAssignDateTimeSubmit} disabled={!selectedDateTime.date || loading}>
             Asignar
           </Button>
         </DialogActions>

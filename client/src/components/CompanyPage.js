@@ -36,6 +36,7 @@ function CompanyPage() {
   const [selectedCompany, setSelectedCompany] = useState({
     name: "",
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchCompanies();
@@ -73,6 +74,7 @@ function CompanyPage() {
   });
 
   const handleCreateCompany = () => {
+    setSelectedCompany(null);
     setOpenCreateDialog(true);
   };
 
@@ -99,6 +101,7 @@ function CompanyPage() {
 
   const handleDeleteCompany = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.delete(`/companies/${selectedCompany.id}`);
       fetchCompanies();
       setOpenConfirmationDialog(false);
@@ -110,6 +113,8 @@ function CompanyPage() {
         setErrorDialogContent(error.response.data.message || "Error al eliminar la empresa. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -120,6 +125,7 @@ function CompanyPage() {
 
   const handleCreateSubmit = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.post("/companies", newCompany);
       fetchCompanies();
       handleCloseCreateDialog();
@@ -131,6 +137,8 @@ function CompanyPage() {
         setErrorDialogContent(error.response.data.message || "Error al crear la empresa. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -140,6 +148,24 @@ function CompanyPage() {
     setSelectedCompany(company);
     setOpenCreateDialog(true);
   };
+
+  const handleConfirmEditCompany = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.put(
+        `/companies/${selectedCompany.id}`,
+        selectedCompany
+      );
+      fetchCompanies();
+      handleCloseCreateDialog();
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
+    } catch (error) {
+      console.error("Error updating company:", error);
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
+    }
+  }
 
   return (
     <CustomContainer>
@@ -225,22 +251,9 @@ function CompanyPage() {
           <Button onClick={handleCloseCreateDialog}>Cancelar</Button>
           {selectedCompany ? (
             <Button
-              onClick={async () => {
-                try {
-                  const response = await axiosInstance.put(
-                    `/companies/${selectedCompany.id}`,
-                    selectedCompany
-                  );
-                  fetchCompanies();
-                  handleCloseCreateDialog();
-                  setMessageDialogContent(response.data.message);
-                  setMessageDialogOpen(true);
-                } catch (error) {
-                  console.error("Error updating company:", error);
-                }
-              }}
+              onClick={handleConfirmEditCompany}
               color="primary"
-              disabled={selectedCompany.name.trim().length < 2}
+              disabled={selectedCompany.name.trim().length < 2 || loading}
             >
               Actualizar empresa
             </Button>
@@ -248,7 +261,7 @@ function CompanyPage() {
             <Button
               onClick={handleCreateSubmit}
               color="primary"
-              disabled={isCreateButtonDisabled()}
+              disabled={isCreateButtonDisabled() || loading}
             >
               Crear empresa
             </Button>
@@ -271,7 +284,7 @@ function CompanyPage() {
           <Button onClick={() => setOpenConfirmationDialog(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleDeleteCompany} color="error">
+          <Button onClick={handleDeleteCompany} color="error" disabled={loading}>
             Eliminar
           </Button>
         </DialogActions>

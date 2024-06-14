@@ -1,8 +1,10 @@
 const msal = require("@azure/msal-node");
 const graph = require('@microsoft/microsoft-graph-client');
+const fs = require('fs').promises;
+const path = require('path');
 require("dotenv").config();
 
-async function sendEmail(subject, body, recipients) {
+async function sendEmail(subject, body, recipients, attachmentPaths = []) {
     const msalConfig = {
         auth: {
             clientId: process.env.OAUTH_CLIENT_ID,
@@ -39,6 +41,28 @@ async function sendEmail(subject, body, recipients) {
         },
     }));
 
+    let attachments = [];
+
+    if (attachmentPaths && Array.isArray(attachmentPaths)) {
+        attachments = await Promise.all(attachmentPaths.map(async (filePath) => {
+            if (filePath) {
+                const fileName = path.basename(filePath);
+                const fileContent = await fs.readFile(filePath);
+                const base64Content = fileContent.toString('base64');
+
+                return {
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    name: fileName,
+                    contentType: "application/octet-stream",
+                    contentBytes: base64Content,
+                };
+            }
+        }));
+
+        // Filter out any undefined attachments
+        attachments = attachments.filter((attachment) => attachment);
+    }
+
     const message = {
         subject: subject,
         body: {
@@ -46,6 +70,7 @@ async function sendEmail(subject, body, recipients) {
             content: body,
         },
         toRecipients: toRecipients,
+        attachments: attachments,
     };
 
     await client.api('/users/reportes@edintel.com/sendMail').post({

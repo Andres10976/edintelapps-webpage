@@ -10,6 +10,26 @@ const sendEmail = require("../utils/mailHelper");
 const archiver = require('archiver');
 require("dotenv").config();
 
+function formatTime(datetimeString) {
+  const date = new Date(datetimeString);
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const formattedHours = hours % 12 || 12;
+  const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+  return `${formattedHours}:${formattedMinutes} ${ampm}`;
+}
+
+function formatDate(dateString) {
+  const options = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: 'UTC'
+  };
+  return new Date(dateString).toLocaleDateString('es-ES', options);
+}
+
 // Set up multer storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -55,37 +75,39 @@ router.post("/", authenticateRole(2, 5), async (req, res) => {
     let body = "";
     if (code) {
       body = `
-      <html>
-        <body>
-          <p>El usuario ${createdBy.name} ${createdBy.lastname} a creado una nueva solicutud.</p>
-          <p></p>
-          <p>La solicitud posee las siguientes características:</p>
-          <p><strong>Código ST:</strong> ${code}</p>
-          <p><strong>Tipo solicitud:</strong> ${type === 1 ? "Correctiva" : "Preventiva"}</p>
-          <p><strong>Cliente:</strong> ${site.clientName}</p>
-          <p><strong>Sitio:</strong> ${site.name}</p>
-          <p><strong>Sistema:</strong> ${systemName}</p>
-          <p><strong>Alcance:</strong> ${scope}</p>
-        </body>
-      </html>
-      `;
+<html>
+  <body>
+    <p>El usuario ${createdBy.name} ${createdBy.lastname} a creado una nueva solicutud.</p>
+    <p>La solicitud posee las siguientes características:</p>
+    <p>
+      <strong>Código ST:</strong> ${code}<br>
+      <strong>Tipo solicitud:</strong> ${type === 1 ? "Correctiva" : "Preventiva"}<br>
+      <strong>Cliente:</strong> ${site.clientName}<br>
+      <strong>Sitio:</strong> ${site.name}<br>
+      <strong>Sistema:</strong> ${systemName}<br>
+      <strong>Alcance:</strong> ${scope}
+    </p>
+  </body>
+</html>
+`;
     }
     else {
       body = `
-      <html>
-        <body>
-          <p>El cliente ${createdBy.name} ${createdBy.lastname} a creado una nueva solicutud a la espera de asignarle código ST.</p>
-          <p></p>
-          <p>La solicitud posee las siguientes características:</p>
-          <p><strong>Código ST:</strong> ${code}</p>
-          <p><strong>Tipo solicitud:</strong> ${type === 1 ? "Correctiva" : "Preventiva"}</p>
-          <p><strong>Cliente:</strong> ${site.clientName}</p>
-          <p><strong>Sitio:</strong> ${site.name}</p>
-          <p><strong>Sistema:</strong> ${systemName}</p>
-          <p><strong>Alcance:</strong> ${scope}</p>
-        </body>
-      </html>
-      `;
+<html>
+  <body>
+    <p>El cliente ${createdBy.name} ${createdBy.lastname} a creado una nueva solicutud a la espera de asignarle código ST.</p>
+    <p>La solicitud posee las siguientes características:</p>
+    <p>
+      <strong>Código ST:</strong> ${code}<br>
+      <strong>Tipo solicitud:</strong> ${type === 1 ? "Correctiva" : "Preventiva"}<br>
+      <strong>Cliente:</strong> ${site.clientName}<br>
+      <strong>Sitio:</strong> ${site.name}<br>
+      <strong>Sistema:</strong> ${systemName}<br>
+      <strong>Alcance:</strong> ${scope}
+    </p>
+  </body>
+</html>
+`;
     }
 
     const recipients = operators.map((operator) => operator.email);
@@ -180,18 +202,22 @@ router.post("/:id/assign", authenticateRole(2, 3), async (req, res) => {
       const pastTechnician = await userFunctions.getById(request.idTechnicianAssigned);
       const subject = `La solicitud código ${request.code} ha sido reasignada`;
       const emailBody = `
-      <html>
-        <body>
-          <p>Anteriormente la solicitud ${request.code} estaba asignada a usted pero la misma fue reasignada a otro técnico. La información de la ST era la siguiente:.</p>
-          <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
-          <p><strong>Cliente:</strong> ${request.clientName}</p>
-          <p><strong>Sitio:</strong> ${request.siteName}</p>
-          <p><strong>Sistema:</strong> ${request.systemName}</p>
-          <p><strong>Alcance:</strong> ${request.scope}</p>
-          <p>En caso de tener dudas con este proceso, comuníquese con su supervisor.</p>
-        </body>
-      </html>
-      `;
+<html>
+  <body>
+    <p>Anteriormente la solicitud ${request.code} estaba asignada a usted pero la misma fue reasignada a otro técnico. La información de la ST era la siguiente:.</p>
+    <p>
+      <strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}<br>
+      <strong>Cliente:</strong> ${request.clientName}<br>
+      <strong>Sitio:</strong> ${request.siteName}<br>
+      <strong>Sistema:</strong> ${request.systemName}<br>
+      <strong>Alcance:</strong> ${request.scope}<br>
+      <strong>Fecha:</strong> ${request?.tentativeDate ? formatDate(request.tentativeDate) : "Sin asignar"}<br>
+      <strong>Hora:</strong> ${request?.tentativeTime ? formatTime(request.tentativeTime) : "Sin asignar"}
+    </p>
+    <p>En caso de tener dudas con este proceso, comuníquese con su supervisor.</p>
+  </body>
+</html>
+`;
 
       sendEmail(subject, emailBody, [pastTechnician.email]);
     }
@@ -200,19 +226,23 @@ router.post("/:id/assign", authenticateRole(2, 3), async (req, res) => {
     const subject = `La solicitud código ${request.code} se te ha asignado.`;
     const url = process.env.PAGE_URL;
     const emailBody = `
-    <html>
-      <body>
-        <p>La solicitud ${request.code} se te ha asignado. Esta posee las siguientes características:.</p>
-        <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
-        <p><strong>Cliente:</strong> ${request.clientName}</p>
-        <p><strong>Sitio:</strong> ${request.siteName}</p>
-        <p><strong>Sistema:</strong> ${request.systemName}</p>
-        <p><strong>Alcance:</strong> ${request.scope}</p>
-        <p>Por favor entra a la página para reconocer la tarea tan pronto como veas este correo.</p>
-        <p>Para más información, ingresa a la página de Edintel <a href="${url}">aquí</a>. Si después de esto, aún te quedan dudas, contacta a tu supervisor</p>
-      </body>
-    </html>
-    `;
+<html>
+  <body>
+    <p>La solicitud ${request.code} se te ha asignado. Esta posee las siguientes características:</p>
+    <p>
+      <strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}<br>
+      <strong>Cliente:</strong> ${request.clientName}<br>
+      <strong>Sitio:</strong> ${request.siteName}<br>
+      <strong>Sistema:</strong> ${request.systemName}<br>
+      <strong>Alcance:</strong> ${request.scope}<br>
+      <strong>Fecha:</strong> ${request?.tentativeDate ? formatDate(request.tentativeDate) : "Sin asignar"}<br>
+      <strong>Hora:</strong> ${request?.tentativeTime ? formatTime(request.tentativeTime) : "Sin asignar"}
+    </p>
+    <p>Por favor entra a la página para reconocer la tarea tan pronto como veas este correo.</p>
+    <p>Para más información, ingresa a la página de Edintel <a href="${url}">aquí</a>. Si después de esto, aún te quedan dudas, contacta a tu supervisor.</p>
+  </body>
+</html>
+`;
     const actualTechnician = await userFunctions.getById(idTechnician);
     sendEmail(subject, emailBody, [actualTechnician.email]);
     res.json({ message: result.message });
@@ -227,7 +257,24 @@ router.post("/:id/assignDateTime", authenticateRole(2, 3), async (req, res) => {
     const { id } = req.params;
     const { date, time } = req.body;
     const result = await requestFunctions.assignTentativeDateTime(id, date, time);
-
+    const request = await requestFunctions.getById(id);
+    if(request.idTechnicianAssigned){
+      const technician = await userFunctions.getById(request.idTechnicianAssigned);
+      const subject = `Fecha y hora tentativa asginada a solicitud código ${request.code}.`;
+      const emailBody = `
+<html>
+  <body>
+    <p>La solicitud código ${request.code} que tienes asignada se le ha asignado una fecha y hora tentativa. Esta posee las siguientes características:</p>
+    <p>
+      <strong>Fecha:</strong> ${formatDate(request.tentativeDate)}<br>
+      <strong>Hora:</strong> ${formatTime(request.tentativeTime)}
+    </p>
+    <p>Por favor tenerlo en consideración.</p>
+  </body>
+</html>
+`;
+      sendEmail(subject, emailBody, [technician.email]);
+    }
     res.json({ message: result.message });
   } catch (error) {
     console.error("Assign DateTime error:", error);
@@ -282,20 +329,21 @@ router.post("/:id/ticketAndReport", authenticateRole(2, 3, 4), upload.fields([{ 
     const subject = `La solicitud ${request.code} ha sido finalizada.`;
     //TODO: Añadir link a la página de Edintel
     const body = `
-      <html>
-        <body>
-          <p>La solicitud ${request.code} ha sido finalizada.</p>
-          <p></p>
-          <p>Las caracteríticas de esta ST son las siguientes:</p>
-          <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
-          <p><strong>Cliente:</strong> ${request.clientName}</p>
-          <p><strong>Sitio:</strong> ${request.siteName}</p>
-          <p><strong>Sistema:</strong> ${request.systemName}</p>
-          <p><strong>Alcance:</strong> ${request.scope}</p>
-          <p>Por favor realizar la revisión de documentos para procesar el cierre de la misma.</p>
-        </body>
-      </html>
-    `;
+<html>
+  <body>
+    <p>La solicitud ${request.code} ha sido finalizada.</p>
+    <p>Las caracteríticas de esta ST son las siguientes:</p>
+    <p>
+      <strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}<br>
+      <strong>Cliente:</strong> ${request.clientName}<br>
+      <strong>Sitio:</strong> ${request.siteName}<br>
+      <strong>Sistema:</strong> ${request.systemName}<br>
+      <strong>Alcance:</strong> ${request.scope}
+    </p>
+    <p>Por favor realizar la revisión de documentos para procesar el cierre de la misma.</p>
+  </body>
+</html>
+`;
 
     if (request.idType === 1) {
       const operators = await userFunctions.getOperators();
@@ -372,32 +420,45 @@ router.get("/:id/ticket", authenticateRole(1, 2, 3, 4, 5), async (req, res) => {
   }
 });
 
-router.post("/:id/close", authenticateRole(1, 2), async (req, res) => {
+router.post("/:id/close", authenticateRole(1, 2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     const request = await requestFunctions.getById(id);
     const result = await requestFunctions.close(id);
     const operators = await userFunctions.getOperators();
+    const cierres = await userFunctions.getCierres();
     const subject = `La solicitud ${request.code} ha sido cerrada`;
     //TODO: Añadir link a la página de Edintel
     const body = `
-      <html>
-        <body>
-          <p>La solicitud ${request.code} ha sido cerrada.</p>
-          <p></p>
-          <p>Las caracteríticas de esta ST son las siguientes:</p>
-          <p><strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}</p>
-          <p><strong>Cliente:</strong> ${request.clientName}</p>
-          <p><strong>Sitio:</strong> ${request.name}</p>
-          <p><strong>Sistema:</strong> ${request.systemName}</p>
-          <p><strong>Alcance:</strong> ${request.scope}</p>
-          <p>Para mayor información, ver la información de la ST en la página. De igual manera, los documentos adjuntos están disponibles para su descarga.</p>
-        </body>
-      </html>
-      `;
+<html>
+  <body>
+    <p>La solicitud ${request.code} ha sido cerrada.</p>
+    <p>Las características de esta ST son las siguientes:</p>
+    <p>
+      <strong>Tipo solicitud:</strong> ${request.idType === 1 ? "Correctiva" : "Preventiva"}<br>
+      <strong>Cliente:</strong> ${request.clientName}<br>
+      <strong>Sitio:</strong> ${request.name}<br>
+      <strong>Sistema:</strong> ${request.systemName}<br>
+      <strong>Alcance:</strong> ${request.scope}
+    </p>
+    <p>Para mayor información, ver la información de la ST en la página. De igual manera, los documentos adjuntos están disponibles para su descarga.</p>
+  </body>
+</html>
+`;
 
-    const recipients = operators.map((operator) => operator.email);
-    sendEmail(subject, body, recipients);
+    const recipients = [...operators, ...cierres].map((recipient) => recipient.email);
+
+    // Get the file paths of the report and ticket(s)
+    const reportPath = await requestFunctions.getReportPathOfRequest(id);
+    const ticketResult = await requestFunctions.getTicketPathOfRequest(id);
+    const ticketPaths = ticketResult.ticketFilePath.split(';');
+
+    // Combine the file paths into a single array
+    const attachmentPaths = [reportPath.reportFilePath, ...ticketPaths];
+
+    // Send the email with the attachments
+    sendEmail(subject, body, recipients, attachmentPaths);
+
     res.json({ message: result.message });
   } catch (error) {
     console.error("Close request error:", error);

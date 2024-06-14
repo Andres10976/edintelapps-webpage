@@ -30,6 +30,7 @@ function Systems() {
   const [messageDialogContent, setMessageDialogContent] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchSystems();
@@ -50,6 +51,7 @@ function Systems() {
 
   const handleSystemFormSubmit = async () => {
     try {
+      setLoading(true);
       let response;
       if (selectedSystem) {
         response = await axiosInstance.put(`/systems/${selectedSystem.id}`, systemForm);
@@ -67,6 +69,8 @@ function Systems() {
         setErrorDialogContent(error.response.data.message || "Error al crear o actualizar un sistema. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -77,6 +81,7 @@ function Systems() {
 
   const confirmDeleteSystem = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.delete(`/systems/${selectedSystem.id}`);
       fetchSystems();
       setOpenConfirmDelete(false);
@@ -88,6 +93,8 @@ function Systems() {
         setErrorDialogContent(error.response.data.message || "Error al eliminar el sistema. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -176,7 +183,7 @@ function Systems() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenSystemForm(false)}>Cancelar</Button>
-          <Button onClick={handleSystemFormSubmit}>
+          <Button onClick={handleSystemFormSubmit} disabled={loading}>
             {selectedSystem ? "Actualizar" : "Crear"}
           </Button>
         </DialogActions>
@@ -196,7 +203,7 @@ function Systems() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenConfirmDelete(false)}>Cancelar</Button>
-          <Button onClick={confirmDeleteSystem} color="error">
+          <Button onClick={confirmDeleteSystem} color="error" disabled={loading}>
             Eliminar
           </Button>
         </DialogActions>

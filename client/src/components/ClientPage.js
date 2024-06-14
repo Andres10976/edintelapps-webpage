@@ -37,6 +37,7 @@ function ClientPage() {
   const [messageDialogContent, setMessageDialogContent] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorDialogContent, setErrorDialogContent] = useState("");
+  const [loading, setLoading] = useState(false);
   
 
   useEffect(() => {
@@ -126,6 +127,7 @@ function ClientPage() {
 
   const handleDeleteBuilding = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.delete(`/clients/${selectedBuilding.id}`);
       fetchBuildings();
       setOpenConfirmationDialog(false);
@@ -137,6 +139,8 @@ function ClientPage() {
         setErrorDialogContent(error.response.data.message || "Error al eliminar el edificio. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -149,6 +153,7 @@ function ClientPage() {
 
   const handleCreateSubmit = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.post("/clients", newBuilding);
       fetchBuildings();
       handleCloseCreateDialog();
@@ -160,6 +165,8 @@ function ClientPage() {
         setErrorDialogContent(error.response.data.message || "Error al crear el edificio. Por favor, intente nuevamente.");
         setErrorDialogOpen(true);
       }
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
     }
   };
 
@@ -169,6 +176,24 @@ function ClientPage() {
     setSelectedBuilding(building);
     setOpenCreateDialog(true);
   };
+
+  const handleEditClient = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.put(
+        `/clients/${selectedBuilding.id}`,
+        selectedBuilding
+      );
+      fetchBuildings();
+      handleCloseCreateDialog();
+      setMessageDialogContent(response.data.message);
+      setMessageDialogOpen(true);
+    } catch (error) {
+      console.error("Error updating building:", error);
+    } finally {
+      setLoading(false); // Set loading back to false after the API call completes
+    }
+  }
 
   return (
     <CustomContainer>
@@ -242,20 +267,7 @@ function ClientPage() {
           {selectedBuilding ? "Editar edificio" : "Crear edificio"}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Nombre"
-            name="name"
-            value={selectedBuilding ? selectedBuilding.name : newBuilding.name}
-            onChange={
-              selectedBuilding ? (e) =>
-                setSelectedBuilding({ ...selectedBuilding, name: e.target.value })
-              : handleInputChange
-            }
-            required
-          />
-          <TextField
+        <TextField
             fullWidth
             margin="normal"
             label="Empresa"
@@ -275,28 +287,28 @@ function ClientPage() {
               </MenuItem>
             ))}
           </TextField>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Nombre"
+            name="name"
+            value={selectedBuilding ? selectedBuilding.name : newBuilding.name}
+            onChange={
+              selectedBuilding ? (e) =>
+                setSelectedBuilding({ ...selectedBuilding, name: e.target.value })
+              : handleInputChange
+            }
+            required
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseCreateDialog}>Cancelar</Button>
           {selectedBuilding ? (
             <Button
-              onClick={async () => {
-                try {
-                  const response = await axiosInstance.put(
-                    `/clients/${selectedBuilding.id}`,
-                    selectedBuilding
-                  );
-                  fetchBuildings();
-                  handleCloseCreateDialog();
-                  setMessageDialogContent(response.data.message);
-                  setMessageDialogOpen(true);
-                } catch (error) {
-                  console.error("Error updating building:", error);
-                }
-              }}
+              onClick={handleEditClient}
               color="primary"
               disabled={
-                selectedBuilding.name.trim().length < 2 || !selectedBuilding.companyId
+                selectedBuilding.name.trim().length < 2 || !selectedBuilding.companyId || loading
               }
             >
               Actualizar edificio
@@ -305,7 +317,7 @@ function ClientPage() {
             <Button
               onClick={handleCreateSubmit}
               color="primary"
-              disabled={isCreateButtonDisabled()}
+              disabled={isCreateButtonDisabled() || loading}
             >
               Crear edificio
             </Button>
@@ -328,7 +340,7 @@ function ClientPage() {
           <Button onClick={() => setOpenConfirmationDialog(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleDeleteBuilding} color="error">
+          <Button onClick={handleDeleteBuilding} color="error" disabled={loading}>
             Eliminar
           </Button>
         </DialogActions>
