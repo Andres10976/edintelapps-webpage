@@ -892,6 +892,13 @@ function RequestPage() {
               maxHeight: ITEM_HEIGHT * 4.5,
               minWidth: '200px',
               boxShadow: 'none',
+              border: '1px solid rgba(0, 0, 0, 0.1)', // Add subtle border
+              overflowY: 'auto', // Enable vertical scrolling if needed
+              '&::-webkit-scrollbar': {
+                display: 'none', // Hide the scrollbar for WebKit browsers (Chrome, Safari)
+              },
+              '-ms-overflow-style': 'none', // Hide the scrollbar for IE and Edge
+              scrollbarWidth: 'none', // Hide the scrollbar for Firefox
             },
             '& .MuiMenu-list': {
               padding: 0,

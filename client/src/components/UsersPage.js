@@ -14,6 +14,8 @@ import {
   CardContent,
   CardActions,
   MenuItem,
+  Menu,
+  IconButton,
   Autocomplete,
 } from "@mui/material";
 import Header from "./Header";
@@ -21,6 +23,9 @@ import axiosInstance from "../axiosInstance";
 import { CustomCard, CustomMain, CustomContainer } from "./styledComponents";
 import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+
+const ITEM_HEIGHT = 48;
 
 function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -47,6 +52,8 @@ function UsersPage() {
   const [errorDialogContent, setErrorDialogContent] = useState("");
   const [openConfirmResetPassword, setOpenConfirmResetPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedUserMenu, setSelectedUserMenu] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -71,6 +78,16 @@ function UsersPage() {
         setErrorDialogOpen(true);
       }
     }
+  };
+
+  const handleMenuOpen = (event, user) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedUserMenu(user);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedUserMenu(null);
   };
 
   const fetchSites = async () => {
@@ -378,22 +395,55 @@ function UsersPage() {
                   <Button size="small" onClick={() => handleUserClick(user)}>
                     Ver detalles
                   </Button>
-                  <Button size="small" onClick={() => handleEditUser(user)}>
-                    Editar
-                  </Button>
-                  {user.roleId !== 6 && (
-                    <Button size="small" onClick={() => handleResetPassword(user)}>
-                      Reiniciar contraseña
-                    </Button>
-                  )}
-                  <Button
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeleteUser(user)}
-                  >
-                    Eliminar
-                  </Button>
+                  <IconButton onClick={(event) => handleMenuOpen(event, user)}>
+                    <MoreVertIcon />
+                  </IconButton>
                 </CardActions>
+                <Menu
+                  id={`long-menu-${selectedUser?.id}`}
+                  anchorEl={anchorEl}
+                  keepMounted
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  sx={{
+                    '& .MuiMenu-paper': {
+                      maxHeight: ITEM_HEIGHT * 4.5,
+                      minWidth: '200px',
+                      boxShadow: 'none',
+                      border: '1px solid rgba(0, 0, 0, 0.1)', // Add subtle border
+                      overflowY: 'auto', // Enable vertical scrolling if needed
+                      '&::-webkit-scrollbar': {
+                        display: 'none', // Hide the scrollbar for WebKit browsers (Chrome, Safari)
+                      },
+                      '-ms-overflow-style': 'none', // Hide the scrollbar for IE and Edge
+                      scrollbarWidth: 'none', // Hide the scrollbar for Firefox
+                    },
+                    '& .MuiMenu-list': {
+                      padding: 0,
+                    },
+                  }}
+                >
+                  <MenuItem onClick={() => {
+                    handleEditUser(selectedUserMenu);
+                    handleMenuClose();
+                  }}>
+                    Editar
+                  </MenuItem>
+                  <MenuItem onClick={() => {
+                    handleDeleteUser(selectedUserMenu);
+                    handleMenuClose();
+                  }}>
+                    Eliminar
+                  </MenuItem>
+                  {selectedUserMenu?.roleId !== 6 && (
+                    <MenuItem onClick={() => {
+                      handleResetPassword(selectedUserMenu);
+                      handleMenuClose();
+                    }}>
+                      Reiniciar contraseña
+                    </MenuItem>
+                  )}
+                </Menu>
               </CustomCard>
             </Grid>
           ))}
@@ -604,7 +654,7 @@ function UsersPage() {
         <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro de que deseas eliminar este usuario?
+            ¿Estás seguro de que deseas eliminar al usuario {selectedUser?.name + " " + selectedUser?.lastname}?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -645,7 +695,7 @@ function UsersPage() {
         <DialogTitle>Confirmar reinicio de contraseña</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro de que deseas reiniciar la contraseña de este usuario?
+            ¿Estás seguro de que deseas reiniciar la contraseña del usuario {selectedUser?.name + " " + selectedUser?.lastname}?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

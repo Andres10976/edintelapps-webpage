@@ -1,7 +1,7 @@
 // PrivateRoute.js
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 
 function PrivateRoute({ children, allowedRoles }) {
   const token = localStorage.getItem('token');
@@ -34,6 +34,7 @@ function PrivateRoute({ children, allowedRoles }) {
     return children;
   } catch (error) {
     // If there's an error decoding the token, redirect to the login page
+    localStorage.removeItem('token');
     return <Navigate to="/login" replace />;
   }
 }
