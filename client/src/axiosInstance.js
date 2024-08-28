@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: `http://192.168.0.155:3000`,
+  baseURL: `http://192.168.2.100:3000`,
 });
 
 // Intercept requests to include token from localStorage

@@ -53,7 +53,7 @@ router.put("/:id", authenticateRole(2, 3), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, idClient, supervisor, contactName, contactPhone, contactMail, address } = req.body;
-    const result = await siteFunctions.update(id, name, supervisor, idClient, contactName, contactPhone, contactMail, address);
+    const result = await siteFunctions.update(id, name, supervisor, idClient, contactName, contactMail, contactPhone, address);
     res.status(201).json({ message: result.message });
   } catch (error) {
     console.error("Update site error:", error);

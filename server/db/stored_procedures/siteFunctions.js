@@ -53,6 +53,7 @@ async function getSitesByCompany(idCompany) {
 
 async function updateSite(id, name, supervisor, idClient, contactName = null, contactMail = null, contactPhone = null, address = null) {
   try {
+    console.log(id, name, supervisor, idClient, contactName, contactMail, contactPhone, address);
     const result = await executeSp("sp_UpdateSite", [
       { name: "id", value: id, type: sql.Int },
       { name: "name", value: name, type: sql.VarChar(50) },
